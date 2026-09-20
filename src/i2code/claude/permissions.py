@@ -105,7 +105,10 @@ def ensure_claude_permissions(repo_root: str) -> None:
     permissions = config.setdefault("permissions", {})
     existing_allow = _without_path_scoped_write_rules(permissions.get("allow", []))
     permissions["allow"] = _merge_permissions(existing_allow, calculate_claude_permissions(repo_root))
-    permissions["deny"] = _merge_permissions(permissions.get("deny", []), DENIED_PERMISSIONS)
+    # I2CODE_ALLOW_CLAUDE_PUSH=1: caller lets Claude push its own branch (e.g. to trigger workflow_dispatch on a fresh
+    # commit mid-task in non-interactive mode); otherwise Claude never pushes — the caller does.
+    denied = [] if os.environ.get("I2CODE_ALLOW_CLAUDE_PUSH") == "1" else DENIED_PERMISSIONS
+    permissions["deny"] = _merge_permissions(permissions.get("deny", []), denied)
     with open(settings_file, "w") as f:
         json.dump(config, f, indent=2)
         f.write("\n")
