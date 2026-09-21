@@ -1,0 +1,7 @@
+Your previous turn ended without an outcome tag, so the caller cannot tell whether the task is done.
+
+- If the task is complete (changes committed and the task marked complete in the plan file), output <SUCCESS>task implemented: COMMIT_SHA</SUCCESS> now.
+- If work remains, continue it now. Wait for long-running commands and CI in the foreground; do not end your turn while something is still running in the background. Then output the tag.
+- If you are blocked, output <FAILURE>what blocks you, including any permission you need</FAILURE>.
+
+End this turn with exactly one of the two tags.

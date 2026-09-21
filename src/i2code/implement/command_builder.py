@@ -1,9 +1,9 @@
 """CommandBuilder: builds ``ClaudeCodeCommand`` instances for all invocation types."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import List, Optional, Tuple
 
-from i2code.implement.claude_runner import ClaudeCodeCommand
+from i2code.implement.claude_runner import ClaudeCodeCommand, SessionId
 from i2code.templates.template_renderer import render_template
 
 
@@ -34,6 +34,17 @@ class CiFixRequest:
 
 class CommandBuilder:
     """Builds ``ClaudeCodeCommand`` instances for all invocation types."""
+
+    def build_nudge_command(self, original: ClaudeCodeCommand, session_id: str) -> ClaudeCodeCommand:
+        """Resume the session of ``original`` and ask Claude to finish with an outcome tag."""
+        if original.mock_command is not None:
+            return replace(original, mock_command=[original.mock_command[0], f"nudge-{session_id}"], label="nudge")
+        return replace(
+            original,
+            prompt=render_template("outcome_nudge.j2", package="i2code.implement"),
+            session_id=SessionId(session_id, is_new=False),
+            label="nudge",
+        )
 
     def build_recovery_command(
         self,

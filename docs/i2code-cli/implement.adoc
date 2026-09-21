@@ -37,6 +37,10 @@ Read the extra prompt text from a UTF-8 file. Cannot be combined with `--extra-p
 Extra arguments appended to every `claude` invocation (task, CI fix, review, recovery), split like a shell, for example `--claude-args "--effort high"`.
 Flags that i2code sets itself (`-p`, `--print`, `--output-format`, `--resume`, `--session-id`, `--allowedTools`) are rejected.
 
+`--nudge-missing-tag N`::
+Non-interactive worktree mode: when Claude exits cleanly but its final message has neither `<SUCCESS>` nor `<FAILURE>`, resume the same session (`--resume`) and ask it to finish with a tag, up to `N` times per attempt (default 0).
+Covers sessions that end their turn while something still runs in the background, such as waiting for CI.
+
 `--allow-push`::
 Let Claude push the idea branch to `origin` during a task (never with `--force`, never another branch), for tasks that need CI to run on a new commit before they can finish.
 The worktree's `.claude/settings.local.json` gets no `Bash(git push:*)` deny rule, and the task prompt allows the push. i2code still pushes after each task.

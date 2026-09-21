@@ -183,7 +183,7 @@ class WorktreeMode:
         for attempt in range(1, max_attempts + 1):
             print_message(f"Running Claude (attempt {attempt}/{max_attempts})...")
 
-            claude_result = self._run_claude(claude_cmd)
+            claude_result = self._nudge_until_tagged(claude_cmd, self._run_claude(claude_cmd))
             head_after = self._git_repo.head_sha
 
             if not check_claude_success(claude_result.returncode, head_before, head_after):
@@ -207,6 +207,24 @@ class WorktreeMode:
 
         print(f"Error: Task failed after {max_attempts} attempts.", file=sys.stderr)
         sys.exit(1)
+
+    def _nudge_until_tagged(self, claude_cmd, claude_result):
+        """Resume a session that exited cleanly without an outcome tag, up to --nudge-missing-tag times."""
+        for _ in range(self._opts.nudge_missing_tag):
+            if not self._needs_nudge(claude_result):
+                break
+            print_message("Claude ended without an outcome tag; resuming its session to ask for one...")
+            nudge_cmd = CommandBuilder().build_nudge_command(claude_cmd, claude_result.session_id)
+            claude_result = self._run_claude(nudge_cmd)
+        return claude_result
+
+    def _needs_nudge(self, claude_result):
+        return (
+            self._opts.non_interactive
+            and claude_result.returncode == 0
+            and claude_result.outcome == "missing"
+            and claude_result.session_id is not None
+        )
 
     def _push_and_ensure_pr(self):
         """Push changes and create a Draft PR if one doesn't exist."""

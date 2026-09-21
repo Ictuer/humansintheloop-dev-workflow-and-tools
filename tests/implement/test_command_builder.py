@@ -416,3 +416,42 @@ class TestCommandBuilderLabels:
     ])
     def test_label(self, build, label):
         assert build().label == label
+
+
+@pytest.mark.unit
+class TestCommandBuilderNudgeCommand:
+    """build_nudge_command resumes the task session and asks for an outcome tag."""
+
+    def _task(self, **overrides):
+        return _build_task_cmd(opts=TaskCommandOpts(interactive=False, extra_cli_args=[
+            "--allowedTools", "Read,Edit", "--add-dir", "/extra",
+        ]), **overrides)
+
+    def test_resumes_session_with_same_tools_and_dirs(self):
+        original = self._task()
+
+        nudge = CommandBuilder().build_nudge_command(original, "s-1")
+
+        assert nudge.label == "nudge"
+        assert nudge.session_id is not None
+        assert nudge.session_id.session_id == "s-1" and nudge.session_id.is_new is False
+        assert nudge.allowed_tools == "Read,Edit"
+        assert nudge.add_dirs == ["/extra"]
+        assert nudge.cwd == original.cwd
+        assert nudge.interactive is False
+
+    def test_prompt_asks_for_outcome_tag_and_foreground_waiting(self):
+        nudge = CommandBuilder().build_nudge_command(self._task(), "s-1")
+
+        assert "ended without an outcome tag" in nudge.prompt
+        assert "<SUCCESS>task implemented: COMMIT_SHA</SUCCESS>" in nudge.prompt
+        assert "<FAILURE>" in nudge.prompt
+        assert "foreground" in nudge.prompt
+
+    def test_mock_command_gets_nudge_argument(self):
+        original = ClaudeCodeCommand(cwd="/c", mock_command=["/mock", "Task 1.1"], label="task")
+
+        nudge = CommandBuilder().build_nudge_command(original, "s-1")
+
+        assert nudge.mock_command == ["/mock", "nudge-s-1"]
+        assert nudge.label == "nudge"

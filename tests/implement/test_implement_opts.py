@@ -169,3 +169,16 @@ class TestAllowPushForwarding:
 
     def test_allow_push_forwarded_to_inner_command(self):
         assert "--allow-push" in ImplementOpts(idea_directory="/tmp", allow_push=True).inner_cli_flags()
+
+
+@pytest.mark.unit
+class TestNudgeMissingTagOption:
+
+    def test_forwarded_to_inner_command(self):
+        flags = ImplementOpts(idea_directory="/tmp", nudge_missing_tag=2).inner_cli_flags()
+        assert flags[flags.index("--nudge-missing-tag") + 1] == "2"
+
+    def test_trunk_rejects_nudges(self):
+        opts = ImplementOpts(idea_directory="/tmp", trunk=True, nudge_missing_tag=1)
+        with pytest.raises(click.UsageError, match="--nudge-missing-tag"):
+            opts.validate_trunk_options()

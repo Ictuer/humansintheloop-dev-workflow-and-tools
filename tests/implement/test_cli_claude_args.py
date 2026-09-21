@@ -37,3 +37,19 @@ class TestClaudeArgsOption:
         assert result.exit_code == 2
         assert "--claude-args cannot contain --resume" in result.output
         assert received_opts == []
+
+
+@pytest.mark.unit
+class TestNudgeMissingTagCli:
+
+    def test_value_reaches_opts(self):
+        result, received_opts = _invoke(["--nudge-missing-tag", "2"])
+
+        assert result.exit_code == 0, result.output
+        assert received_opts[0].nudge_missing_tag == 2
+
+    def test_negative_is_usage_error(self):
+        result, received_opts = _invoke(["--nudge-missing-tag", "-1"])
+
+        assert result.exit_code == 2
+        assert received_opts == []

@@ -56,6 +56,8 @@ from i2code.implement.scaffold_opts import ScaffoldOpts
               help="Show full Claude output instead of progress dots")
 @click.option("--allow-push", is_flag=True,
               help="Let Claude push the idea branch mid-task (never --force); i2code still pushes after each task")
+@click.option("--nudge-missing-tag", type=click.IntRange(min=0), default=0, metavar="N",
+              help="Resume a Claude session that ended without <SUCCESS>/<FAILURE> up to N times (default: 0)")
 @click.option("--claude-args", metavar="TEXT",
               help="Extra arguments for every Claude invocation, split like a shell (e.g. \"--effort high\")")
 @click.pass_context

@@ -35,6 +35,7 @@ class ImplementOpts:
     debug_claude: bool = False
     claude_args: str | None = None
     allow_push: bool = False
+    nudge_missing_tag: int = 0
 
     _INNER_FORWARDED = {
         "cleanup",
@@ -49,6 +50,7 @@ class ImplementOpts:
         "ci_timeout",
         "claude_args",
         "allow_push",
+        "nudge_missing_tag",
     }
 
     _INNER_IGNORED = {
@@ -95,6 +97,8 @@ class ImplementOpts:
             incompatible.append("--ci-fix-retries")
         if self.ci_timeout != 600:
             incompatible.append("--ci-timeout")
+        if self.nudge_missing_tag != 0:
+            incompatible.append("--nudge-missing-tag")
         if incompatible:
             raise click.UsageError(
                 f"--trunk cannot be combined with: {', '.join(incompatible)}"

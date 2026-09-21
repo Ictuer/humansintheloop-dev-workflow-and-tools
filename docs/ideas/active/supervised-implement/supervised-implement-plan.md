@@ -158,16 +158,16 @@ Lets a supervising session steer and unblock a running implement instead of kill
     - [x] Write failing SupervisedClaudeRunner tests for note injection by label and mock commands untouched
     - [x] Implement note injection and the note_delivered event
 
-- [ ] **Task 3.2: --nudge-missing-tag resumes a session that ended without an outcome tag**
+- [x] **Task 3.2: --nudge-missing-tag resumes a session that ended without an outcome tag**
   - TaskType: OUTCOME
   - Entrypoint: `i2code implement <idea-dir> --non-interactive --nudge-missing-tag 1`
   - Observable: When a task invocation exits 0 without <SUCCESS> or <FAILURE>, i2code runs claude --resume <session id> with the nudge prompt (label nudge, same allowed tools and extra args) up to N times, then validates the last result as today; no session id or a <FAILURE> tag means no nudge; default 0 keeps today's behaviour
   - Evidence: `uv run python -m pytest tests/implement/test_worktree_mode_nudge.py tests/implement/test_command_builder.py -m unit`
   - Steps:
-    - [ ] Write failing CommandBuilder test for build_nudge_command from an original task command and a session id
-    - [ ] Add outcome_nudge.j2 and build_nudge_command
-    - [ ] Write failing WorktreeMode tests: nudge then SUCCESS passes; nudge still missing exits as today; FAILURE tag is not nudged; no session id is not nudged
-    - [ ] Add nudge_missing_tag to CLI and ImplementOpts and implement the nudge loop in _run_claude_and_validate
+    - [x] Write failing CommandBuilder test for build_nudge_command from an original task command and a session id
+    - [x] Add outcome_nudge.j2 and build_nudge_command
+    - [x] Write failing WorktreeMode tests: nudge then SUCCESS passes; nudge still missing exits as today; FAILURE tag is not nudged; no session id is not nudged
+    - [x] Add nudge_missing_tag to CLI and ImplementOpts and implement the nudge loop in _run_claude_and_validate
 
 - [ ] **Task 3.3: --on-failure=wait blocks a failed task until i2code ctl resume**
   - TaskType: OUTCOME
@@ -279,3 +279,6 @@ tests/ctl-cmd/test_ctl_cli.py: status running/blocked/dead/finished/none/--json/
 
 ### 2026-09-21 22:09 - mark-task-complete
 Inbox (atomic post/take/count/discard), ctl note + queued count, note injection by steerable label with note_delivered, assembler wires Inbox; unit suite 1573 passed
+
+### 2026-09-21 22:12 - mark-task-complete
+build_nudge_command + outcome_nudge.j2; WorktreeMode nudges missing-tag sessions (incl. uncommitted work), not FAILURE/no session/default; opts forwarded, trunk rejects; unit suite 1587 passed
