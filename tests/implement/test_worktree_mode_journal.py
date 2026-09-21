@@ -113,3 +113,26 @@ class TestWorktreeModeJournal:
                 mode.execute()
 
             assert supervisor.events[-1] == {"event": "run_finished", "status": "failed", "exit_code": 1}
+
+
+class _ExplodingRecovery:
+    def commit_if_needed(self):
+        raise RuntimeError("gh exploded")
+
+
+@pytest.mark.unit
+class TestRunFinishedOnUnexpectedErrors:
+
+    def test_unexpected_exception_records_failed_run_and_propagates(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            plan_path, idea_dir = _setup_idea(tmpdir, [(1, 1, "Only", False)], ci_workflow=True)
+            supervisor = RecordingSupervisor()
+            mode, *_ = _make_worktree_mode(
+                plan_path, idea_dir, tmpdir, opts=ImplementOpts(idea_directory=idea_dir),
+                commit_recovery=_ExplodingRecovery(), supervisor=supervisor,
+            )
+
+            with pytest.raises(RuntimeError, match="gh exploded"):
+                mode.execute()
+
+            assert supervisor.events[-1] == {"event": "run_finished", "status": "failed", "exit_code": 1}

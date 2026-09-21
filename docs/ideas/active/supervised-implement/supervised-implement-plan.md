@@ -243,14 +243,14 @@ Fixes from an independent review of the branch: journal robustness, exit-path jo
     - [x] Write events with ensure_ascii, decode lines with errors=replace, repair a missing final newline before appending
     - [x] Catch OSError in RunJournal (warn once, then no-op) and in note delivery
 
-- [ ] **Task 5.2: run_finished is recorded on every exit path**
+- [x] **Task 5.2: run_finished is recorded on every exit path**
   - TaskType: OUTCOME
   - Entrypoint: `i2code implement <idea-dir> when an unexpected exception escapes the loop`
   - Observable: Any exception other than RunStopped, SystemExit and KeyboardInterrupt records run_finished failed with exit code 1 and is re-raised
   - Evidence: `uv run python -m pytest tests/implement/test_worktree_mode_journal.py -m unit`
   - Steps:
-    - [ ] Write a failing test with a collaborator that raises RuntimeError
-    - [ ] Record run_finished for any other exception and re-raise
+    - [x] Write a failing test with a collaborator that raises RuntimeError
+    - [x] Record run_finished for any other exception and re-raise
 
 - [ ] **Task 5.3: Resume requests cannot leak into a later block or be lost**
   - TaskType: OUTCOME
@@ -348,3 +348,6 @@ Independent code review findings
 
 ### 2026-09-21 23:10 - mark-task-complete
 ASCII events, undecodable/partial lines skipped, newline repair, OSError→warn+disable, inbox OSError→no notes, block exits when journal disabled; 657 passed
+
+### 2026-09-21 23:11 - mark-task-complete
+Unexpected exception → run_finished failed exit 1, re-raised; implement unit 586 passed

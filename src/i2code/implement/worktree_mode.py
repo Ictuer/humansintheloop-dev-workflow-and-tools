@@ -90,6 +90,9 @@ class WorktreeMode:
         except KeyboardInterrupt:
             self._record_run_finished(130)
             raise
+        except Exception:
+            self._record_run_finished(1)
+            raise
         self._record_run_finished(0)
 
     def _record_run_finished(self, exit_code):
