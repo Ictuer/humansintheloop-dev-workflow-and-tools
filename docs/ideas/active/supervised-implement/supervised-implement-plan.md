@@ -95,15 +95,15 @@ Makes a running implement observable: every Claude invocation and lifecycle step
     - [x] Add session_id and stats to ClaudeResult and fill them in _run_claude_with_output_capture
     - [x] Add an integration_claude test that runs a one-line prompt and asserts a non-empty session_id
 
-- [ ] **Task 2.2: RunJournal writes events.jsonl and status.json under the git common dir**
+- [x] **Task 2.2: RunJournal writes events.jsonl and status.json under the git common dir**
   - TaskType: INFRA
   - Entrypoint: `RunJournal(RunPaths.for_idea(repo, idea_name)).record(event, **fields)`
   - Observable: Each record appends one JSON line with ts and event; status.json equals fold_status(all events) after every record and is replaced atomically; RunPaths resolves <git common dir>/i2code/implement/<idea> from the main checkout and from a worktree
-  - Evidence: `uv run python -m pytest tests/implement/test_run_journal.py -m unit`
+  - Evidence: `uv run python -m pytest tests/supervision/test_run_paths.py tests/supervision/test_run_journal.py -m unit`
   - Steps:
-    - [ ] Write failing tests for RunPaths from a main checkout and from a linked worktree (tmp git repos)
-    - [ ] Write failing table tests for fold_status covering every state transition in spec §3
-    - [ ] Implement RunPaths, fold_status and RunJournal (append + atomic os.replace)
+    - [x] Write failing tests for RunPaths from a main checkout and from a linked worktree (tmp git repos)
+    - [x] Write failing table tests for fold_status covering every state transition in spec §3
+    - [x] Implement RunPaths, fold_status and RunJournal (append + atomic os.replace) in the new src/i2code/supervision package (design-pattern-catalog: package cohesion, tests mirror source)
 
 - [ ] **Task 2.3: Every Claude invocation is journaled with its label**
   - TaskType: OUTCOME
@@ -251,3 +251,9 @@ allow_push threaded CLI→opts→ProjectSetup→permissions (deny rule removed) 
 
 ### 2026-09-21 21:57 - mark-task-complete
 ClaudeResult.session_id + RunStats from stream-json (unit tests) and verified against real claude (integration_claude passed); unit suite 1500 passed
+
+### 2026-09-21 21:57 - replace-task
+Place supervision code in its own package per design-pattern-catalog (package cohesion, tests mirror source)
+
+### 2026-09-21 21:59 - mark-task-complete
+RunPaths (main + linked worktree), fold_status table tests, RunJournal append/atomic status/continuation; unit suite 1519 passed
