@@ -209,15 +209,15 @@ Lets a supervising session steer and unblock a running implement instead of kill
 ## Steel Thread 4: End-to-End Proof and Documentation
 Proves the control plane with a mock-Claude run and documents how a supervising session uses it.
 
-- [ ] **Task 4.1: A mock-Claude run proves block, note, resume and stop end to end**
+- [x] **Task 4.1: A mock-Claude run proves block, resume and stop end to end**
   - TaskType: OUTCOME
-  - Entrypoint: `i2code implement <idea-dir> --mock-claude <script> --non-interactive --on-failure wait --skip-ci-wait`
-  - Observable: In a temporary repo with a fake GitHub, a mock Claude that fails the first task makes the run block; ctl status shows blocked; ctl note plus ctl resume let the second invocation succeed; ctl stop ends the run with run_finished stopped
+  - Entrypoint: `i2code implement <idea-dir> --non-interactive --mock-claude <script> --skip-ci-wait --on-failure wait (own process), i2code ctl status|resume|stop|events (separate processes)`
+  - Observable: In a temporary repo with a local bare origin and a fake GitHub client, a mock Claude that reports <FAILURE> on the first task makes the run block; ctl status shows the block reason, detail and session; ctl resume --note continues the blocked session and both tasks complete; in a second run ctl stop ends the blocked run with state stopped and exit 0. Note delivery is covered by unit tests because mock commands never receive notes (spec §5)
   - Evidence: `uv run python -m pytest tests/implement/test_supervised_run_integration.py -m integration`
   - Steps:
-    - [ ] Study test_task_execution_integration.py for the existing temporary-repo and mock-Claude setup
-    - [ ] Write the integration test driving implement in a background thread and ctl from the test
-    - [ ] Fix any gaps it exposes
+    - [x] Study test_task_execution_integration.py for the existing temporary-repo and mock-Claude setup
+    - [x] Write the integration test running implement as its own process (it installs signal handlers, so it must own its main thread) and ctl from the test
+    - [x] Fix any gaps it exposes
 
 - [ ] **Task 4.2: Document supervising a non-interactive run**
   - TaskType: INFRA
@@ -291,3 +291,9 @@ Build fixer blocks ci_fix/ci_retries_exhausted and reruns fix loop with note; pu
 
 ### 2026-09-21 22:43 - mark-task-complete
 Stop checkpoints (task loop, review loop, blocked) → run_finished stopped exit 0; stale resume/stop discarded at start, notes kept; ctl stop refuses without live run; unit 1634 passed
+
+### 2026-09-21 22:57 - replace-task
+implement must own its main thread (signal handlers); note delivery covered by unit tests since mocks never get notes
+
+### 2026-09-21 22:57 - mark-task-complete
+test_supervised_run_integration.py: block→ctl status→ctl resume→2 tasks complete; block→ctl stop→stopped exit 0; integration suite 14 passed
