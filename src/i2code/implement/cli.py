@@ -25,6 +25,9 @@ from i2code.implement.scaffold_opts import ScaffoldOpts
               help="Run Claude in non-interactive mode (uses -p flag)")
 @click.option("--extra-prompt", metavar="TEXT",
               help="Extra text to append to Claude's prompt (after a blank line)")
+@click.option("--extra-prompt-file", metavar="PATH",
+              type=click.Path(exists=True, dir_okay=False),
+              help="Read the extra prompt text from a file (instead of --extra-prompt)")
 @click.option("--skip-ci-wait", is_flag=True,
               help="Skip waiting for CI after push (for testing)")
 @click.option("--ci-fix-retries", type=int, default=3,
@@ -56,8 +59,18 @@ def implement_cmd(ctx, **kwargs):
     """Implement a development plan using Git worktrees and GitHub Draft PRs."""
     print_message(f"i2code implement: {kwargs['idea_directory']}")
     kwargs["idea_directory"] = resolve_idea_directory(kwargs["idea_directory"])
+    kwargs["extra_prompt"] = _extra_prompt_from(kwargs.pop("extra_prompt"), kwargs.pop("extra_prompt_file"))
     command = assemble_command(ctx, assemble_implement, ImplementOpts(**kwargs))
     command.execute()
+
+
+def _extra_prompt_from(extra_prompt, extra_prompt_file):
+    if extra_prompt_file is None:
+        return extra_prompt
+    if extra_prompt is not None:
+        raise click.UsageError("--extra-prompt and --extra-prompt-file cannot be combined")
+    with open(extra_prompt_file, encoding="utf-8") as f:
+        return f.read()
 
 
 @click.command("scaffold")

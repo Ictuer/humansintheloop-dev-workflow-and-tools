@@ -46,15 +46,15 @@
 
 Lets callers drop the `claude` wrapper on PATH, the `I2CODE_ALLOW_CLAUDE_PUSH` variable and the long `--extra-prompt` argument (spec §1).
 
-- [ ] **Task 1.1: `--extra-prompt-file` supplies the extra prompt from a file**
+- [x] **Task 1.1: `--extra-prompt-file` supplies the extra prompt from a file**
   - TaskType: OUTCOME
   - Entrypoint: `i2code implement <idea-dir> --extra-prompt-file prompt.md --dry-run`
   - Observable: The file's text reaches the task prompt exactly as `--extra-prompt` would; giving both options fails with a usage error naming both
   - Evidence: `uv run python -m pytest tests/implement/test_cli_extra_prompt_file.py -m unit`
   - Steps:
-    - [ ] Write failing CLI tests (CliRunner with a command factory that captures `ImplementOpts`): file content becomes `extra_prompt`; both options → `UsageError`; missing file → click error
-    - [ ] Add `--extra-prompt-file` (`click.Path(exists=True, dir_okay=False)`) to `implement_cmd` and map it to `extra_prompt` before building `ImplementOpts`
-    - [ ] Document the option in `docs/i2code-cli/implement.adoc`
+    - [x] Write failing CLI tests (CliRunner with a command factory that captures `ImplementOpts`): file content becomes `extra_prompt`; both options → `UsageError`; missing file → click error
+    - [x] Add `--extra-prompt-file` (`click.Path(exists=True, dir_okay=False)`) to `implement_cmd` and map it to `extra_prompt` before building `ImplementOpts`
+    - [x] Document the option in `docs/i2code-cli/implement.adoc`
 
 - [ ] **Task 1.2: `--claude-args` appends extra arguments to every real Claude invocation**
   - TaskType: OUTCOME
@@ -239,3 +239,6 @@ Initial plan: supervisor control thread
 
 ### 2026-09-21 21:45 - insert-thread-after
 Initial plan: end-to-end and docs thread
+
+### 2026-09-21 21:49 - mark-task-complete
+test_cli_extra_prompt_file.py: file content → extra_prompt, both options → usage error, missing file → usage error; unit suite 1467 passed

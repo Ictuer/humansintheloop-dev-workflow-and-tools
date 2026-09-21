@@ -30,6 +30,9 @@ Run Claude in non-interactive mode (uses the `-p` flag).
 `--extra-prompt TEXT`::
 Extra text to append to Claude's prompt (after a blank line).
 
+`--extra-prompt-file PATH`::
+Read the extra prompt text from a UTF-8 file. Cannot be combined with `--extra-prompt`.
+
 `--trunk`::
 Execute tasks locally on the current branch (no worktree, PR, or CI).
 
