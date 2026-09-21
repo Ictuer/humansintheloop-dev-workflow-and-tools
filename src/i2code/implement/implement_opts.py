@@ -1,8 +1,13 @@
 """Options dataclass for the implement command."""
 
+import shlex
 from dataclasses import dataclass, fields
 
 import click
+
+CLAUDE_FLAGS_OWNED_BY_I2CODE = (
+    "-p", "--print", "--output-format", "--resume", "--session-id", "--allowedTools",
+)
 
 
 @dataclass
@@ -28,6 +33,7 @@ class ImplementOpts:
     address_review_comments: bool = False
     skip_scaffolding: bool = False
     debug_claude: bool = False
+    claude_args: str | None = None
 
     _INNER_FORWARDED = {
         "cleanup",
@@ -40,6 +46,7 @@ class ImplementOpts:
         "extra_prompt",
         "ci_fix_retries",
         "ci_timeout",
+        "claude_args",
     }
 
     _INNER_IGNORED = {
@@ -62,6 +69,19 @@ class ImplementOpts:
         ("skip_ci_wait", "--skip-ci-wait"),
         ("address_review_comments", "--address-review-comments"),
     ]
+
+    def __post_init__(self):
+        self._reject_owned_claude_flags()
+
+    def claude_global_args(self):
+        """Return --claude-args split like a shell, for every real Claude invocation."""
+        return shlex.split(self.claude_args) if self.claude_args else []
+
+    def _reject_owned_claude_flags(self):
+        for token in self.claude_global_args():
+            flag = token.split("=", 1)[0]
+            if flag in CLAUDE_FLAGS_OWNED_BY_I2CODE:
+                raise click.UsageError(f"--claude-args cannot contain {flag} (i2code sets it)")
 
     def validate_trunk_options(self):
         """Raise click.UsageError if --trunk is combined with incompatible options."""

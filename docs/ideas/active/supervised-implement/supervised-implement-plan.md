@@ -56,17 +56,17 @@ Lets callers drop the `claude` wrapper on PATH, the `I2CODE_ALLOW_CLAUDE_PUSH` v
     - [x] Add `--extra-prompt-file` (`click.Path(exists=True, dir_okay=False)`) to `implement_cmd` and map it to `extra_prompt` before building `ImplementOpts`
     - [x] Document the option in `docs/i2code-cli/implement.adoc`
 
-- [ ] **Task 1.2: `--claude-args` appends extra arguments to every real Claude invocation**
+- [x] **Task 1.2: `--claude-args` appends extra arguments to every real Claude invocation**
   - TaskType: OUTCOME
   - Entrypoint: `i2code implement <idea-dir> --non-interactive --claude-args "--effort high"`
   - Observable: Every `claude` argv built by `ClaudeRunner` ends with `--effort high` before `-p <prompt>`; owned flags (`-p`, `--print`, `--output-format`, `--resume`, `--session-id`, `--allowedTools`) are rejected with a usage error; the option is forwarded to the inner command in isolate mode
   - Evidence: `uv run python -m pytest tests/implement/test_claude_runner.py tests/implement/test_implement_opts.py tests/implement/test_cli_claude_args.py -m unit`
   - Steps:
-    - [ ] Write failing `ClaudeRunner._build_argv` tests for global extra args (interactive and non-interactive, with and without session/add-dir)
-    - [ ] Add `global_args` to `ClaudeRunner.__init__` and place them after i2code's own flags, before the prompt
-    - [ ] Write failing tests for `ImplementOpts.claude_args` parsing (`shlex`), owned-flag rejection and `inner_cli_flags` forwarding
-    - [ ] Add `claude_args` to `ImplementOpts`, validate it, and pass the split list to `ClaudeRunner` in `assemble_implement`
-    - [ ] Document the option in `docs/i2code-cli/implement.adoc`
+    - [x] Write failing `ClaudeRunner._build_argv` tests for global extra args (interactive and non-interactive, with and without session/add-dir)
+    - [x] Add `global_args` to `ClaudeRunner.__init__` and place them after i2code's own flags, before the prompt
+    - [x] Write failing tests for `ImplementOpts.claude_args` parsing (`shlex`), owned-flag rejection and `inner_cli_flags` forwarding
+    - [x] Add `claude_args` to `ImplementOpts`, validate it, and pass the split list to `ClaudeRunner` in `assemble_implement`
+    - [x] Document the option in `docs/i2code-cli/implement.adoc`
 
 - [ ] **Task 1.3: `--allow-push` lets Claude push the idea branch mid-task**
   - TaskType: OUTCOME
@@ -242,3 +242,6 @@ Initial plan: end-to-end and docs thread
 
 ### 2026-09-21 21:49 - mark-task-complete
 test_cli_extra_prompt_file.py: file content → extra_prompt, both options → usage error, missing file → usage error; unit suite 1467 passed
+
+### 2026-09-21 21:51 - mark-task-complete
+ClaudeRunner global_args + ImplementOpts.claude_args (shlex, owned-flag rejection, forwarded) + CLI + assembler wiring test; unit suite 1485 passed

@@ -137,3 +137,28 @@ class TestValidateTrunkOptionsErrorMessage:
         )
         with pytest.raises(click.UsageError, match="--cleanup.*--isolate"):
             opts.validate_trunk_options()
+
+
+@pytest.mark.unit
+class TestClaudeArgs:
+    """--claude-args is split with shlex and may not override flags i2code owns."""
+
+    def test_default_has_no_global_args(self):
+        assert ImplementOpts(idea_directory="/tmp").claude_global_args() == []
+
+    def test_splits_like_a_shell(self):
+        opts = ImplementOpts(idea_directory="/tmp", claude_args="--effort high --append-system-prompt 'be brief'")
+        assert opts.claude_global_args() == ["--effort", "high", "--append-system-prompt", "be brief"]
+
+    @pytest.mark.parametrize("owned", [
+        "-p", "--print", "--output-format", "--output-format=json", "--resume", "--session-id",
+        "--allowedTools", "--allowedTools=Read",
+    ])
+    def test_owned_flag_is_usage_error(self, owned):
+        with pytest.raises(click.UsageError, match=f"--claude-args cannot contain {owned.split('=')[0]}"):
+            ImplementOpts(idea_directory="/tmp", claude_args=f"--effort high {owned} x")
+
+    def test_forwarded_to_inner_command(self):
+        flags = ImplementOpts(idea_directory="/tmp", claude_args="--effort high").inner_cli_flags()
+        idx = flags.index("--claude-args")
+        assert flags[idx + 1] == "--effort high"

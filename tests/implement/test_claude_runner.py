@@ -510,6 +510,56 @@ class TestClaudeRunnerExecute:
         assert result.result_text == "hello world"
 
 
+@pytest.mark.unit
+class TestClaudeRunnerGlobalArgs:
+    """ClaudeRunner(global_args=...) appends caller arguments to every real invocation."""
+
+    def test_batch_places_global_args_after_own_flags_before_prompt(self, mocker):
+        mock_popen = _patch_batch_popen(mocker)
+
+        runner = ClaudeRunner(interactive=False, global_args=["--effort", "high"])
+        command = ClaudeCodeCommand(
+            prompt="p",
+            cwd="/c",
+            allowed_tools="Read",
+            session_id=SessionId("abc", is_new=False),
+            add_dirs=["/d1"],
+            extra_args=["--print-extra"],
+        )
+
+        runner.execute(command)
+
+        _assert_argv_and_cwd(
+            mock_popen,
+            [
+                "claude", "--verbose", "--output-format=stream-json",
+                "--allowedTools", "Read",
+                "--resume", "abc",
+                "--add-dir", "/d1",
+                "--print-extra",
+                "--effort", "high",
+                "-p", "p",
+            ],
+            "/c",
+        )
+
+    def test_interactive_places_global_args_before_prompt(self, mocker):
+        mock_run = _patch_interactive_run(mocker)
+
+        runner = ClaudeRunner(interactive=True, global_args=["--effort", "high"])
+        runner.execute(ClaudeCodeCommand(prompt="p", cwd="/c"))
+
+        _assert_argv_and_cwd(mock_run, ["claude", "--effort", "high", "p"], "/c")
+
+    def test_mock_command_ignores_global_args(self, mocker):
+        mock_popen = _patch_batch_popen(mocker)
+
+        runner = ClaudeRunner(interactive=False, global_args=["--effort", "high"])
+        runner.execute(ClaudeCodeCommand(cwd="/c", mock_command=["/mock", "task"]))
+
+        _assert_argv_and_cwd(mock_popen, ["/mock", "task"], "/c")
+
+
 @pytest.mark.integration_claude
 class TestClaudeRunnerExecuteRealClaude:
     """ClaudeRunner.execute() against the real claude CLI returns parsed result_text."""

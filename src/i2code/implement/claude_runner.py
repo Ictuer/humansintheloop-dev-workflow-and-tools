@@ -290,9 +290,15 @@ def print_task_failure_diagnostics(
 class ClaudeRunner:
     """Delegates to the module-level run functions."""
 
-    def __init__(self, interactive: bool = True, debug: bool = False):
+    def __init__(
+        self,
+        interactive: bool = True,
+        debug: bool = False,
+        global_args: Optional[List[str]] = None,
+    ):
         self._interactive = interactive
         self._debug = debug
+        self._global_args = list(global_args or [])
 
     def execute(self, command: ClaudeCodeCommand) -> ClaudeResult:
         if command.mock_command is not None:
@@ -330,6 +336,7 @@ class ClaudeRunner:
             argv += ["--add-dir", directory]
 
         argv += list(command.extra_args)
+        argv += self._global_args
 
         prompt = command.prompt if command.prompt is not None else ""
         if effective_interactive:

@@ -54,6 +54,8 @@ from i2code.implement.scaffold_opts import ScaffoldOpts
               help="Skip project scaffolding step")
 @click.option("--debug-claude", is_flag=True,
               help="Show full Claude output instead of progress dots")
+@click.option("--claude-args", metavar="TEXT",
+              help="Extra arguments for every Claude invocation, split like a shell (e.g. \"--effort high\")")
 @click.pass_context
 def implement_cmd(ctx, **kwargs):
     """Implement a development plan using Git worktrees and GitHub Draft PRs."""
