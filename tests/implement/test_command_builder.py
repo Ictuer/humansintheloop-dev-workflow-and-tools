@@ -399,3 +399,20 @@ class TestCommandBuilderTaskCommandAllowPush:
         assert "Do not push to the remote repository" not in cmd.prompt
         assert "You may push the current branch to origin" in cmd.prompt
         assert "never with --force" in cmd.prompt
+
+
+@pytest.mark.unit
+class TestCommandBuilderLabels:
+    """Every built command carries a label naming the kind of invocation."""
+
+    @pytest.mark.parametrize("build,label", [
+        (_build_task_cmd, "task"),
+        (_build_scaffolding_cmd, "scaffolding"),
+        (_build_triage_cmd, "triage"),
+        (_build_fix_cmd, "fix_feedback"),
+        (_build_recovery_cmd, "recovery"),
+        (_build_ci_fix_cmd, "ci_fix"),
+        (_build_feedback_cmd, "feedback"),
+    ])
+    def test_label(self, build, label):
+        assert build().label == label

@@ -802,3 +802,16 @@ class TestWorktreeModeAllowPush:
 
             _, cmd, _ = fake_runner.calls[0]
             assert expected in cmd.prompt
+
+
+@pytest.mark.unit
+class TestWorktreeModeMockLabel:
+
+    def test_mock_task_command_is_labelled_task(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mode, _, fake_runner, _, _ = _make_non_interactive_mode(
+                tmpdir, "<SUCCESS>task implemented: bbb</SUCCESS>", skip_ci_wait=True,
+            )
+            mode.execute()
+
+            assert fake_runner.calls[0][1].label == "task"

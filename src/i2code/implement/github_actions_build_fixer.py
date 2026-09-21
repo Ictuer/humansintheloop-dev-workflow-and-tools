@@ -142,6 +142,7 @@ class GithubActionsBuildFixer:
             claude_cmd = ClaudeCodeCommand(
                 cwd=cwd,
                 mock_command=[self._opts.mock_claude, f"fix-ci-{run_id}"],
+                label="ci_fix",
             )
         else:
             claude_cmd = CommandBuilder().build_ci_fix_command(

@@ -627,3 +627,18 @@ class TestClaudeRunnerExecuteRealClaude:
         assert result.session_id
         assert result.stats.num_turns is not None and result.stats.num_turns >= 1
         assert result.stats.duration_s is not None and result.stats.duration_s > 0
+
+
+@pytest.mark.unit
+class TestClaudeResultOutcome:
+    """ClaudeResult.outcome classifies the final text by its outcome tag."""
+
+    @pytest.mark.parametrize("result,outcome", [
+        (ClaudeResult(returncode=0, result_text="done <SUCCESS>task implemented: abc</SUCCESS>"), "success"),
+        (ClaudeResult(returncode=0, result_text="<FAILURE>needs SECRET_X</FAILURE>"), "failure"),
+        (ClaudeResult(returncode=0, result_text="Waiting for CI..."), "missing"),
+        (ClaudeResult(returncode=0, output=CapturedOutput("<SUCCESS>x</SUCCESS>")), "success"),
+        (ClaudeResult(returncode=0), None),
+    ], ids=["success", "failure", "missing", "stdout_fallback", "not_captured"])
+    def test_outcome(self, result, outcome):
+        assert result.outcome == outcome

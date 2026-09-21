@@ -49,6 +49,18 @@ class ClaudeResult:
     session_id: Optional[str] = None
     stats: RunStats = field(default_factory=RunStats)
 
+    @property
+    def outcome(self) -> Optional[str]:
+        """``success``/``failure`` by outcome tag, ``missing`` without one, None when output was not captured."""
+        text = self.result_text or self.output.stdout
+        if not text:
+            return None
+        if "<SUCCESS>" in text:
+            return "success"
+        if "<FAILURE>" in text:
+            return "failure"
+        return "missing"
+
 
 @dataclass(frozen=True)
 class SessionId:
@@ -68,6 +80,7 @@ class ClaudeCodeCommand:
     add_dirs: List[str] = field(default_factory=list)
     extra_args: List[str] = field(default_factory=list)
     mock_command: Optional[List[str]] = None
+    label: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.mock_command is None and self.prompt is None:

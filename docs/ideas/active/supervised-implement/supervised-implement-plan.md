@@ -105,16 +105,17 @@ Makes a running implement observable: every Claude invocation and lifecycle step
     - [x] Write failing table tests for fold_status covering every state transition in spec §3
     - [x] Implement RunPaths, fold_status and RunJournal (append + atomic os.replace) in the new src/i2code/supervision package (design-pattern-catalog: package cohesion, tests mirror source)
 
-- [ ] **Task 2.3: Every Claude invocation is journaled with its label**
+- [x] **Task 2.3: Every Claude invocation is journaled with its label**
   - TaskType: OUTCOME
   - Entrypoint: `i2code implement <idea-dir> --non-interactive`
-  - Observable: events.jsonl has a claude_started and a claude_finished event for each Claude invocation, with label task, ci_fix, triage, fix_feedback or recovery, the outcome tag, session id and stats
-  - Evidence: `uv run python -m pytest tests/implement/test_supervised_claude_runner.py tests/implement/test_command_builder.py -m unit`
+  - Observable: events.jsonl has a claude_started and a claude_finished event for each Claude invocation, with label task, ci_fix, triage, fix_feedback, recovery, scaffolding or feedback, the outcome tag, session id and stats
+  - Evidence: `uv run python -m pytest tests/supervision/test_supervised_claude_runner.py tests/implement/test_command_builder.py tests/implement/test_claude_runner.py tests/implement/test_command_assembler.py -m unit`
   - Steps:
-    - [ ] Write failing CommandBuilder tests asserting the label of each built command
-    - [ ] Add an optional label to ClaudeCodeCommand and set it in every CommandBuilder method and in the build fixer's mock path
-    - [ ] Write failing tests for SupervisedClaudeRunner journaling around a FakeClaudeRunner
-    - [ ] Implement SupervisedClaudeRunner and wrap the runner in assemble_implement
+    - [x] Write failing CommandBuilder tests asserting the label of each built command
+    - [x] Add an optional label to ClaudeCodeCommand and set it in every CommandBuilder method and in the task and CI-fix mock paths
+    - [x] Write failing tests for ClaudeResult.outcome (success, failure, missing, not captured)
+    - [x] Write failing tests for SupervisedClaudeRunner journaling around a FakeClaudeRunner
+    - [x] Implement SupervisedClaudeRunner in src/i2code/supervision and wrap the runner in assemble_implement with a RunJournal for the idea
 
 - [ ] **Task 2.4: Worktree mode journals the run, task, push and CI lifecycle**
   - TaskType: OUTCOME
@@ -257,3 +258,9 @@ Place supervision code in its own package per design-pattern-catalog (package co
 
 ### 2026-09-21 21:59 - mark-task-complete
 RunPaths (main + linked worktree), fold_status table tests, RunJournal append/atomic status/continuation; unit suite 1519 passed
+
+### 2026-09-21 21:59 - replace-task
+Supervision package location; add ClaudeResult.outcome step; list all labels
+
+### 2026-09-21 22:01 - mark-task-complete
+Labels on all CommandBuilder commands + task/ci_fix mocks, ClaudeResult.outcome, SupervisedClaudeRunner journaling, assembler wiring test writes events under .git; unit suite 1537 passed

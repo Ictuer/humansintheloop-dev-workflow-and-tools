@@ -201,6 +201,7 @@ class WorktreeMode:
             return ClaudeCodeCommand(
                 cwd=cwd,
                 mock_command=[self._opts.mock_claude, task_description],
+                label="task",
             )
 
         extra_cli_args = None

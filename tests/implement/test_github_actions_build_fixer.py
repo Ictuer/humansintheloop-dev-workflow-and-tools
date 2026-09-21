@@ -151,3 +151,19 @@ class TestGithubActionsBuildFixerFixCiFailure:
         assert cmd.cwd == fake_repo.working_tree_dir
         assert cmd.mock_command == [mock_path, "fix-ci-123"]
         assert cwd == fake_repo.working_tree_dir
+
+
+@pytest.mark.unit
+class TestGithubActionsBuildFixerMockLabel:
+
+    def test_mock_ci_fix_command_is_labelled_ci_fix(self):
+        fixer, fake_repo, fake_gh, fake_runner = _make_fixer(
+            failing_run=_CI_FAILURE,
+            opts_overrides=dict(non_interactive=True, mock_claude="/mock", ci_fix_retries=1),
+        )
+        fake_runner.set_side_effect(lambda: fake_repo.set_head_sha("bbb"))
+        fake_gh.set_workflow_completion_result(_BRANCH, "bbb", (True, None))
+
+        fixer.check_and_fix_ci()
+
+        assert fake_runner.calls[0][1].label == "ci_fix"

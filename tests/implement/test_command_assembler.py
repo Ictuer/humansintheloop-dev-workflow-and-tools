@@ -1,11 +1,14 @@
 """Wiring tests for assemble_implement (the implement composition root)."""
 
+import json
+
 import pytest
 from git import Repo
 
 from i2code.implement.claude_runner import ClaudeCodeCommand
 from i2code.implement.command_assembler import assemble_implement
 from i2code.implement.implement_opts import ImplementOpts
+from i2code.supervision.run_paths import RunPaths
 
 
 @pytest.fixture
@@ -17,7 +20,7 @@ def idea_dir(tmp_path):
 
 
 def _claude_argv(command):
-    runner = command.mode_factory._claude_runner
+    runner = command.mode_factory._claude_runner.inner
     return runner._build_argv(ClaudeCodeCommand(prompt="p", cwd="/c"), False)
 
 
@@ -35,3 +38,17 @@ class TestAssembleImplementClaudeArgs:
         command = assemble_implement(ImplementOpts(idea_directory=str(idea_dir), non_interactive=True))
 
         assert _claude_argv(command) == ["claude", "--verbose", "--output-format=stream-json", "-p", "p"]
+
+
+@pytest.mark.unit
+class TestAssembleImplementJournal:
+
+    def test_claude_invocations_are_journaled_under_the_git_dir(self, idea_dir, tmp_path):
+        command = assemble_implement(ImplementOpts(idea_directory=str(idea_dir), non_interactive=True))
+        runner = command.mode_factory._claude_runner
+
+        runner.execute(ClaudeCodeCommand(cwd=str(tmp_path), mock_command=["true"], label="task"))
+
+        paths = RunPaths.for_idea(Repo(tmp_path), "demo")
+        events = [json.loads(line) for line in paths.events_file.read_text().splitlines()]
+        assert [(e["event"], e["label"]) for e in events] == [("claude_started", "task"), ("claude_finished", "task")]

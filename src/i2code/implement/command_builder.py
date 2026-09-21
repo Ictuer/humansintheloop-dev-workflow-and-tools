@@ -44,6 +44,7 @@ class CommandBuilder:
     ) -> ClaudeCodeCommand:
         return self._render_prompt_command(
             "commit_recovery.j2",
+            "recovery",
             cwd,
             interactive,
             plan_file=plan_file,
@@ -79,6 +80,7 @@ class CommandBuilder:
             allowed_tools=allowed_tools,
             add_dirs=add_dirs,
             extra_args=extra_args,
+            label="task",
         )
 
     def _split_extra_cli_args(
@@ -125,11 +127,13 @@ class CommandBuilder:
             prompt=prompt,
             interactive=interactive,
             allowed_tools=allowed_tools,
+            label="scaffolding",
         )
 
     def _render_prompt_command(
         self,
         template_name: str,
+        label: str,
         cwd: str,
         interactive: bool,
         **template_args: object,
@@ -143,6 +147,7 @@ class CommandBuilder:
             cwd=cwd,
             prompt=prompt,
             interactive=interactive,
+            label=label,
         )
 
     def build_triage_command(
@@ -153,6 +158,7 @@ class CommandBuilder:
     ) -> ClaudeCodeCommand:
         return self._render_prompt_command(
             "triage_feedback.j2",
+            "triage",
             cwd,
             interactive,
             feedback_content=feedback_content,
@@ -166,6 +172,7 @@ class CommandBuilder:
     ) -> ClaudeCodeCommand:
         return self._render_prompt_command(
             "fix_feedback.j2",
+            "fix_feedback",
             cwd,
             interactive,
             pr_url=request.pr_url,
@@ -186,6 +193,7 @@ class CommandBuilder:
 
         return self._render_prompt_command(
             "ci_fix.j2",
+            "ci_fix",
             cwd,
             interactive,
             run_id=request.run_id,
@@ -213,4 +221,5 @@ class CommandBuilder:
             cwd=cwd,
             interactive=False,
             extra_args=["--print", "wt-handle-feedback.md"],
+            label="feedback",
         )
