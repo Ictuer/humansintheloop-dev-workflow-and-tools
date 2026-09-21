@@ -1,8 +1,9 @@
 """WorktreeMode: execute plan tasks using worktree + PR + CI loop."""
 
+import os
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from i2code.claude.permissions import calculate_claude_permissions
 from i2code.implement.git_setup import (
@@ -17,8 +18,19 @@ from i2code.implement.command_builder import CommandBuilder, TaskCommandOpts
 from i2code.implement.pr_helpers import is_pr_complete
 from i2code.implement.timing import Timer, timed
 from i2code.implement.console import print_message
+from i2code.supervision.supervisor import NullSupervisor, Supervisor
 
 REVIEW_POLL_INTERVAL_SECONDS = 30
+
+
+def _exit_code(exit_request: SystemExit) -> int:
+    if exit_request.code is None:
+        return 0
+    return exit_request.code if isinstance(exit_request.code, int) else 1
+
+
+def _task_id(task):
+    return f"{task.number.thread}.{task.number.task}"
 
 
 def _format_duration(seconds):
@@ -42,6 +54,7 @@ class LoopSteps:
     commit_recovery: object
     clock: object = None
     sleep: object = None
+    supervisor: Supervisor = field(default_factory=NullSupervisor)
 
 
 class WorktreeMode:
@@ -61,9 +74,29 @@ class WorktreeMode:
         self._loop_steps = loop_steps
         self._clock = loop_steps.clock or time.monotonic
         self._sleep = loop_steps.sleep or time.sleep
+        self._supervisor = loop_steps.supervisor
 
     def execute(self):
-        """Run the worktree task loop until all tasks are complete."""
+        """Run the worktree task loop until all tasks are complete, journaling how the run ends."""
+        self._supervisor.record(
+            "run_started", pid=os.getpid(), idea=self._work_project.name,
+            branch=self._git_repo.branch, worktree=self._git_repo.working_tree_dir,
+        )
+        try:
+            self._run_loop()
+        except SystemExit as exit_request:
+            self._record_run_finished(_exit_code(exit_request))
+            raise
+        except KeyboardInterrupt:
+            self._record_run_finished(130)
+            raise
+        self._record_run_finished(0)
+
+    def _record_run_finished(self, exit_code):
+        status = "completed" if exit_code == 0 else "failed"
+        self._supervisor.record("run_finished", status=status, exit_code=exit_code)
+
+    def _run_loop(self):
         with timed("commit_recovery"):
             self._loop_steps.commit_recovery.commit_if_needed()
 
@@ -124,10 +157,18 @@ class WorktreeMode:
         task_description = next_task.print()
         progress = self._work_project.task_progress()
         print_message(f"Executing task {progress.current} of {progress.total}: {task_description}")
+        self._supervisor.record(
+            "task_started", task=_task_id(next_task), title=next_task.task.title,
+            index=progress.current, total=progress.total,
+        )
 
         start = self._clock()
         self._run_claude_and_validate(next_task, task_description)
         elapsed = self._clock() - start
+        self._supervisor.record(
+            "task_completed", task=_task_id(next_task), duration_s=round(elapsed, 1),
+            head=self._git_repo.head_sha,
+        )
         duration = _format_duration(elapsed)
         print_message(f"Task {progress.current} of {progress.total} completed successfully in {duration}.", flush=True)
         self._push_and_ensure_pr()
@@ -175,6 +216,7 @@ class WorktreeMode:
             if not self._git_repo.push():
                 print("Error: Could not push commit to branch", file=sys.stderr)
                 sys.exit(1)
+        self._supervisor.record("pushed", head=self._git_repo.head_sha)
 
         if self._git_repo.pr_number is None:
             with timed("ensure_pr"):

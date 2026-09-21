@@ -117,16 +117,16 @@ Makes a running implement observable: every Claude invocation and lifecycle step
     - [x] Write failing tests for SupervisedClaudeRunner journaling around a FakeClaudeRunner
     - [x] Implement SupervisedClaudeRunner in src/i2code/supervision and wrap the runner in assemble_implement with a RunJournal for the idea
 
-- [ ] **Task 2.4: Worktree mode journals the run, task, push and CI lifecycle**
+- [x] **Task 2.4: Worktree mode journals the run, task, push and CI lifecycle**
   - TaskType: OUTCOME
   - Entrypoint: `i2code implement <idea-dir> --non-interactive`
   - Observable: events.jsonl records run_started, task_started, task_completed, pushed, ci_waiting, ci_finished and run_finished; run_finished is written with status failed and the exit code when existing code calls sys.exit
   - Evidence: `uv run python -m pytest tests/implement/test_worktree_mode_journal.py -m unit`
   - Steps:
-    - [ ] Write failing WorktreeMode tests using a recording supervisor fake for a two-task run
-    - [ ] Add an optional supervisor to LoopSteps with NullSupervisor as default, and record the lifecycle events
-    - [ ] Make GithubActionsMonitor report the CI result so ci_finished can carry success and failing_workflow
-    - [ ] Write failing tests for run_finished on normal completion and on SystemExit, then wrap execute accordingly
+    - [x] Write failing WorktreeMode tests using a recording supervisor fake for a two-task run
+    - [x] Add an optional supervisor to LoopSteps with NullSupervisor as default, and record the lifecycle events
+    - [x] Make GithubActionsMonitor report the CI result so ci_finished can carry success and failing_workflow
+    - [x] Write failing tests for run_finished on normal completion and on SystemExit, then wrap execute accordingly
 
 - [ ] **Task 2.5: i2code ctl status and events show the run to a supervisor**
   - TaskType: OUTCOME
@@ -264,3 +264,6 @@ Supervision package location; add ClaudeResult.outcome step; list all labels
 
 ### 2026-09-21 22:01 - mark-task-complete
 Labels on all CommandBuilder commands + task/ci_fix mocks, ClaudeResult.outcome, SupervisedClaudeRunner journaling, assembler wiring test writes events under .git; unit suite 1537 passed
+
+### 2026-09-21 22:05 - mark-task-complete
+test_worktree_mode_journal: lifecycle order, fields, skipped CI, SystemExit→run_finished failed; supervisor wired via ModeFactory (assembler test); unit suite 1542 passed

@@ -40,6 +40,7 @@ def assemble_implement(opts):
         opts=opts,
         claude_runner=claude_runner,
         build_fixer_factory=build_fixer_factory,
+        supervisor=journal,
     )
     return ImplementCommand(opts, project, git_repo, mode_factory)
 

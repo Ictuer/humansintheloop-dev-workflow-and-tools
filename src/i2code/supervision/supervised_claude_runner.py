@@ -1,14 +1,11 @@
 """SupervisedClaudeRunner: journals every Claude invocation made through the wrapped runner."""
 
-from typing import Any, Optional, Protocol
+from typing import Optional, Protocol
 
 from i2code.implement.claude_runner import ClaudeCodeCommand, ClaudeResult
+from i2code.supervision.supervisor import Supervisor
 
 SUMMARY_LENGTH = 300
-
-
-class EventRecorder(Protocol):
-    def record(self, event: str, **fields: Any) -> Any: ...
 
 
 class ClaudeExecutor(Protocol):
@@ -25,7 +22,7 @@ def _resumed_session(command: ClaudeCodeCommand) -> Optional[str]:
 class SupervisedClaudeRunner:
     """Decorates a Claude runner with claude_started/claude_finished journal events."""
 
-    def __init__(self, inner: ClaudeExecutor, journal: EventRecorder):
+    def __init__(self, inner: ClaudeExecutor, journal: Supervisor):
         self.inner = inner
         self._journal = journal
 

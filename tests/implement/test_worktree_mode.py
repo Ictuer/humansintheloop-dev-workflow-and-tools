@@ -83,10 +83,12 @@ def _make_worktree_mode(plan_path, idea_dir, work_dir, **kwargs):
     elif fake_repo.gh_client is None:
         fake_repo._gh_client = fake_gh
 
+    supervisor = kwargs.get('supervisor')
     ci_monitor = GithubActionsMonitor(
         gh_client=fake_gh,
         skip_ci_wait=opts.skip_ci_wait,
         ci_timeout=opts.ci_timeout,
+        **({'supervisor': supervisor} if supervisor else {}),
     )
 
     build_fixer = GithubActionsBuildFixer(
@@ -116,6 +118,7 @@ def _make_worktree_mode(plan_path, idea_dir, work_dir, **kwargs):
         review_processor=review_processor,
         commit_recovery=commit_recovery,
         clock=kwargs.get('clock'),
+        **({'supervisor': supervisor} if supervisor else {}),
     )
     mode = WorktreeMode(
         opts=opts,

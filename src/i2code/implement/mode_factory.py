@@ -11,15 +11,17 @@ from i2code.implement.trunk_mode import TrunkMode
 from i2code.implement.workspace import Workspace
 from i2code.implement.worktree_mode import LoopSteps, WorktreeMode
 from i2code.implement.worktree_setup import ProjectSetup
+from i2code.supervision.supervisor import NullSupervisor, Supervisor
 
 
 class ModeFactory:
     """Creates execution mode instances, wiring up their dependencies."""
 
-    def __init__(self, opts, claude_runner, build_fixer_factory):
+    def __init__(self, opts, claude_runner, build_fixer_factory, supervisor: Supervisor = NullSupervisor()):
         self._opts = opts
         self._claude_runner = claude_runner
         self._build_fixer_factory = build_fixer_factory
+        self._supervisor = supervisor
 
     def make_trunk_mode(self, git_repo, project):
         workspace = Workspace(git_repo=git_repo, project=project)
@@ -70,6 +72,7 @@ class ModeFactory:
             gh_client=git_repo.gh_client,
             skip_ci_wait=self._opts.skip_ci_wait,
             ci_timeout=self._opts.ci_timeout,
+            supervisor=self._supervisor,
         )
         build_fixer = self._build_fixer_factory.create(git_repo)
         review_processor = PullRequestReviewProcessor(
@@ -90,6 +93,7 @@ class ModeFactory:
             build_fixer=build_fixer,
             review_processor=review_processor,
             commit_recovery=commit_recovery,
+            supervisor=self._supervisor,
         )
         return WorktreeMode(
             opts=self._opts,

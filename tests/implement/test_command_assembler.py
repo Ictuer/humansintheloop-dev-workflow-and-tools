@@ -52,3 +52,19 @@ class TestAssembleImplementJournal:
         paths = RunPaths.for_idea(Repo(tmp_path), "demo")
         events = [json.loads(line) for line in paths.events_file.read_text().splitlines()]
         assert [(e["event"], e["label"]) for e in events] == [("claude_started", "task"), ("claude_finished", "task")]
+
+    def test_worktree_loop_and_ci_monitor_share_the_runner_journal(self, idea_dir, tmp_path):
+        from fake_git_repository import FakeGitRepository
+        from fake_workflow_state import FakeWorkflowState
+
+        command = assemble_implement(ImplementOpts(idea_directory=str(idea_dir), non_interactive=True))
+        journal = command.mode_factory._claude_runner._journal
+
+        mode = command.mode_factory.make_worktree_mode(
+            git_repo=FakeGitRepository(working_tree_dir=str(tmp_path)),
+            state=FakeWorkflowState(),
+            work_project=command.project,
+        )
+
+        assert mode._loop_steps.supervisor is journal
+        assert mode._loop_steps.ci_monitor._supervisor is journal
