@@ -35,6 +35,8 @@ class RunSupervisor:
         return self._journal.record(event, **fields)
 
     def block(self, kind: str, reason: str, **details: Any) -> ResumeRequest:
+        # ctl only posts a resume after seeing this run blocked, so anything already queued answered an earlier block.
+        self._inbox.discard("resume")
         self.record("blocked", kind=kind, reason=reason, **details)
         if not self._journal.enabled:
             self._echo(f"Failed ({kind}: {reason}); cannot wait for i2code ctl without a run journal, exiting.")
@@ -48,7 +50,7 @@ class RunSupervisor:
             self.raise_if_stop_requested()
             resumes = self._inbox.take("resume")
             if resumes:
-                return self._resumed(resumes[0])
+                return self._resumed(resumes)
 
     def discard_stale_requests(self) -> None:
         """Drop resume/stop requests left by an earlier run; queued notes stay."""
@@ -59,7 +61,9 @@ class RunSupervisor:
             self.record("stop_requested")
             raise RunStopped()
 
-    def _resumed(self, message: dict) -> ResumeRequest:
-        request = ResumeRequest(note=message.get("note"), fresh=bool(message.get("fresh")))
-        self.record("resumed", mode="fresh" if request.fresh else "continue", note=request.note)
+    def _resumed(self, messages: list) -> ResumeRequest:
+        """Merge resumes read in one poll: notes joined oldest first, fresh from the newest."""
+        notes = [message["note"] for message in messages if message.get("note")]
+        request = ResumeRequest(note="\n".join(notes) or None, fresh=bool(messages[-1].get("fresh")))
+        self.record("resumed", mode="fresh" if request.fresh else "continue", note=request.note, merged=len(messages))
         return request

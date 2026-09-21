@@ -1,5 +1,7 @@
 """RunSupervisor blocks a failed run until i2code ctl resumes or stops it."""
 
+import json
+
 import pytest
 
 from i2code.supervision.inbox import Inbox
@@ -132,3 +134,33 @@ class TestRunSupervisorWithoutJournal:
 
         assert exit_info.value.code == 1
         assert "cannot wait for i2code ctl" in messages[-1]
+
+
+@pytest.mark.unit
+class TestRunSupervisorResumeRaces:
+
+    def test_resume_queued_before_the_block_is_discarded(self, paths):
+        inbox = Inbox(paths)
+        inbox.post("resume", note="meant for an earlier block", fresh=False)
+        sleep = _ScriptedSleep(lambda: None, lambda: inbox.post("resume", note="for this block", fresh=False))
+        supervisor = _supervisor(paths, sleep, [])
+
+        request = supervisor.block("task", "failure_tag", task="1.1", detail="", session_id="s", permission_denials=[])
+
+        assert request.note == "for this block"
+        assert len(sleep.durations) == 2
+
+    def test_resumes_in_one_poll_are_merged(self, paths):
+        inbox = Inbox(paths)
+
+        def two_resumes():
+            inbox.post("resume", note="first", fresh=False)
+            inbox.post("resume", note="second", fresh=True)
+
+        supervisor = _supervisor(paths, _ScriptedSleep(two_resumes), [])
+
+        request = supervisor.block("task", "failure_tag", task="1.1", detail="", session_id="s", permission_denials=[])
+
+        assert request == ResumeRequest(note="first\nsecond", fresh=True)
+        resumed = [json.loads(line) for line in paths.events_file.read_text().splitlines()][-1]
+        assert resumed["event"] == "resumed" and resumed["merged"] == 2

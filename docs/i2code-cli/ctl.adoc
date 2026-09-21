@@ -70,6 +70,7 @@ The result is validated as usual; if it fails again, the run blocks again.
 A run blocked on exhausted CI-fix retries runs the CI fix loop again with a fresh budget, with the note added to the
 next CI-fix prompt; a run blocked on a failed push pushes again (the note is not used there — queue it with `note`).
 Exits 1 without doing anything when the run is not alive or not blocked.
+A resume queued before the run blocked is discarded when it blocks, so it can never release a later block.
 
 === `stop`
 
@@ -98,7 +99,7 @@ When a run starts, `resume` and `stop` requests left by an earlier run are disca
 | `pushed` | `head`
 | `ci_waiting` / `ci_finished` | `head` / `head`, `success`, `failing_workflow`
 | `blocked` | `kind` (`task`, `ci_fix`, `push`), `reason` (`failure_tag`, `missing_tag`, `attempts_exhausted`, `ci_retries_exhausted`, `push_failed`; after a resume also `no_commit`, `not_marked_complete`, `no_ci_workflow`), `task`, `detail`, `session_id`, `permission_denials`
-| `resumed` | `mode` (`continue`, `fresh`), `note`
+| `resumed` | `mode` (`continue`, `fresh`), `note`, `merged` (resume requests read together; their notes are joined)
 | `stop_requested` | —
 | `run_finished` | `status` (`completed`, `stopped`, `failed`), `exit_code`
 |===

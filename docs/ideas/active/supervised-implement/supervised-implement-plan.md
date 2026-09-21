@@ -252,14 +252,14 @@ Fixes from an independent review of the branch: journal robustness, exit-path jo
     - [x] Write a failing test with a collaborator that raises RuntimeError
     - [x] Record run_finished for any other exception and re-raise
 
-- [ ] **Task 5.3: Resume requests cannot leak into a later block or be lost**
+- [x] **Task 5.3: Resume requests cannot leak into a later block or be lost**
   - TaskType: OUTCOME
   - Entrypoint: `i2code ctl resume <idea> racing with the run`
   - Observable: block() discards resume requests that were queued before the block started; several resumes read in the same poll are merged (notes joined oldest first, fresh from the newest) and the resumed event records how many were merged
   - Evidence: `uv run python -m pytest tests/supervision/test_run_supervisor.py -m unit`
   - Steps:
-    - [ ] Write failing tests for a stale resume before the block and for two resumes in one poll
-    - [ ] Discard stale resumes on entry and merge concurrent ones
+    - [x] Write failing tests for a stale resume before the block and for two resumes in one poll
+    - [x] Discard stale resumes on entry and merge concurrent ones
 
 - [ ] **Task 5.4: Small correctness fixes from review**
   - TaskType: OUTCOME
@@ -351,3 +351,6 @@ ASCII events, undecodable/partial lines skipped, newline repair, OSError→warn+
 
 ### 2026-09-21 23:11 - mark-task-complete
 Unexpected exception → run_finished failed exit 1, re-raised; implement unit 586 passed
+
+### 2026-09-21 23:12 - mark-task-complete
+Stale resumes discarded on block entry; resumes in one poll merged (notes joined, fresh from newest, merged count journaled); 74 passed
