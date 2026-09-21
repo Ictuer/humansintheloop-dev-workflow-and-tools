@@ -55,7 +55,7 @@ def _blocked_lines(blocked: Optional[Dict[str, Any]], idea: str) -> List[str]:
     ]
 
 
-def describe(idea: str, status: Dict[str, Any], alive: bool, events_file: str) -> List[str]:
+def describe(idea: str, status: Dict[str, Any], alive: bool, events_file: str, queued_notes: int = 0) -> List[str]:
     """Lines shown by ``i2code ctl status``."""
     if status["state"] == "none":
         return [f"no run recorded for {idea} ({events_file})"]
@@ -65,5 +65,7 @@ def describe(idea: str, status: Dict[str, Any], alive: bool, events_file: str) -
     lines += _blocked_lines(status.get("blocked"), idea)
     if status.get("stop_requested"):
         lines.append("stop requested")
+    if queued_notes:
+        lines.append(f"queued notes: {queued_notes}")
     lines.append(f"events: {events_file}")
     return lines

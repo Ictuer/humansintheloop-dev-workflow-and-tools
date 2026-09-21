@@ -9,6 +9,7 @@ from git import Repo
 
 from i2code.ctl_cmd.status_view import describe, is_alive
 from i2code.idea.resolver import resolve_idea_directory
+from i2code.supervision.inbox import Inbox
 from i2code.supervision.run_journal import fold_status, read_events
 from i2code.supervision.run_paths import RunPaths
 
@@ -38,11 +39,24 @@ def status_cmd(idea, as_json):
     name, paths = _locate(idea)
     status = fold_status(read_events(paths))
     alive = is_alive(status["pid"])
+    queued_notes = Inbox(paths).count("note")
     if as_json:
-        click.echo(json.dumps({**status, "alive": alive, "events_file": str(paths.events_file)}, indent=2))
+        click.echo(json.dumps({**status, "alive": alive, "queued_notes": queued_notes,
+                               "events_file": str(paths.events_file)}, indent=2))
         return
-    for line in describe(name, status, alive, str(paths.events_file)):
+    for line in describe(name, status, alive, str(paths.events_file), queued_notes):
         click.echo(line)
+
+
+@ctl.command("note")
+@click.argument("idea")
+@click.argument("text")
+def note_cmd(idea, text):
+    """Queue a note for the next Claude invocation of the idea's run."""
+    name, paths = _locate(idea)
+    inbox = Inbox(paths)
+    inbox.post("note", text=text)
+    click.echo(f"queued note for {name} ({inbox.count('note')} pending)")
 
 
 @ctl.command("events")

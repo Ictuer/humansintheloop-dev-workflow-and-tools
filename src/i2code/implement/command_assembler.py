@@ -12,6 +12,7 @@ from i2code.implement.implement_command import ImplementCommand
 from i2code.implement.mode_factory import ModeFactory
 from i2code.implement.project_scaffolding import ScaffoldingCreator
 from i2code.implement.scaffold_command import ScaffoldCommand
+from i2code.supervision.inbox import Inbox
 from i2code.supervision.run_journal import RunJournal
 from i2code.supervision.run_paths import RunPaths
 from i2code.supervision.supervised_claude_runner import SupervisedClaudeRunner
@@ -23,7 +24,8 @@ def assemble_implement(opts):
     repo = Repo(project.directory, search_parent_directories=True)
     gh_client = GitHubClient(cwd=repo.working_tree_dir)
     git_repo = GitRepository(repo, gh_client=gh_client)
-    journal = RunJournal(RunPaths.for_idea(repo, project.name))
+    run_paths = RunPaths.for_idea(repo, project.name)
+    journal = RunJournal(run_paths)
     claude_runner = SupervisedClaudeRunner(
         ClaudeRunner(
             interactive=not opts.non_interactive,
@@ -31,6 +33,7 @@ def assemble_implement(opts):
             global_args=opts.claude_global_args(),
         ),
         journal,
+        notes=Inbox(run_paths),
     )
     build_fixer_factory = GithubActionsBuildFixerFactory(
         opts=opts,

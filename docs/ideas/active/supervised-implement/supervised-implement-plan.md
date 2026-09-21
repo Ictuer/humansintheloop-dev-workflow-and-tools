@@ -145,18 +145,18 @@ Makes a running implement observable: every Claude invocation and lifecycle step
 ## Steel Thread 3: Supervisor Control: note, nudge, block, resume, stop
 Lets a supervising session steer and unblock a running implement instead of killing and restarting it (spec §5–§8).
 
-- [ ] **Task 3.1: i2code ctl note steers the next Claude invocation**
+- [x] **Task 3.1: i2code ctl note steers the next Claude invocation**
   - TaskType: OUTCOME
   - Entrypoint: `i2code ctl note <idea> "text"`
   - Observable: The note is stored in inbox/; ctl status shows the queued note count; the next Claude invocation labelled task, ci_fix, fix_feedback, nudge or resume gets the notes appended under 'Notes from the supervising session (oldest first):', the inbox notes are deleted, and note_delivered is journaled; other labels and mock commands never receive notes
   - Evidence: `uv run python -m pytest tests/supervision/test_inbox.py tests/supervision/test_supervised_claude_runner.py tests/ctl-cmd -m unit`
   - Steps:
-    - [ ] Write failing Inbox tests: atomic write, ordered read by kind, delete after drain, notes kept when other kinds are drained
-    - [ ] Implement Inbox in src/i2code/supervision
-    - [ ] Write failing CliRunner tests for ctl note (including when nothing is running) and the queued note count in ctl status
-    - [ ] Implement ctl note and the count
-    - [ ] Write failing SupervisedClaudeRunner tests for note injection by label and mock commands untouched
-    - [ ] Implement note injection and the note_delivered event
+    - [x] Write failing Inbox tests: atomic write, ordered read by kind, delete after drain, notes kept when other kinds are drained
+    - [x] Implement Inbox in src/i2code/supervision
+    - [x] Write failing CliRunner tests for ctl note (including when nothing is running) and the queued note count in ctl status
+    - [x] Implement ctl note and the count
+    - [x] Write failing SupervisedClaudeRunner tests for note injection by label and mock commands untouched
+    - [x] Implement note injection and the note_delivered event
 
 - [ ] **Task 3.2: --nudge-missing-tag resumes a session that ended without an outcome tag**
   - TaskType: OUTCOME
@@ -276,3 +276,6 @@ Supervision/ctl-cmd test locations; queued-note count moved here from 2.5
 
 ### 2026-09-21 22:07 - mark-task-complete
 tests/ctl-cmd/test_ctl_cli.py: status running/blocked/dead/finished/none/--json/path, events --limit/--follow; docs ctl.adoc linked; unit suite 1552 passed; real CLI smoke ok
+
+### 2026-09-21 22:09 - mark-task-complete
+Inbox (atomic post/take/count/discard), ctl note + queued count, note injection by steerable label with note_delivered, assembler wires Inbox; unit suite 1573 passed

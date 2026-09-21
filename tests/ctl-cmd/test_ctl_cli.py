@@ -8,6 +8,7 @@ from click.testing import CliRunner
 from git import Repo
 
 from i2code.ctl_cmd.cli import ctl
+from i2code.supervision.inbox import Inbox
 from i2code.supervision.run_journal import RunJournal
 from i2code.supervision.run_paths import RunPaths
 
@@ -138,3 +139,23 @@ class TestCtlEvents:
 
         events = [json.loads(line)["event"] for line in result.output.splitlines()]
         assert events == ["task_started", "pushed", "run_finished"]
+
+
+@pytest.mark.unit
+class TestCtlNote:
+
+    def test_note_is_queued_even_without_a_run(self, repo):
+        result = _invoke("note", "demo", "use the staging cluster")
+
+        assert result.exit_code == 0
+        assert "queued note for demo (1 pending)" in result.output
+        inbox = Inbox(RunPaths.for_idea(repo, "demo"))
+        assert inbox.take("note") == [{"kind": "note", "text": "use the staging cluster"}]
+
+    def test_status_shows_queued_notes(self, repo):
+        _start_run(_journal(repo))
+        _invoke("note", "demo", "one")
+        _invoke("note", "demo", "two")
+
+        assert "queued notes: 2" in _invoke("status", "demo").output
+        assert json.loads(_invoke("status", "demo", "--json").output)["queued_notes"] == 2

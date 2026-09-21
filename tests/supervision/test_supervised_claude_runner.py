@@ -57,3 +57,72 @@ class TestSupervisedClaudeRunnerJournal:
         SupervisedClaudeRunner(inner, journal).execute(ClaudeCodeCommand(prompt="p", cwd="/c", label="task"))
 
         assert journal.events[1]["summary"] == "x" * 300
+
+
+class QueuedNotes:
+    def __init__(self, *texts):
+        self._texts = list(texts)
+
+    def take(self, kind):
+        assert kind == "note"
+        taken = [{"kind": "note", "text": t} for t in self._texts]
+        self._texts = []
+        return taken
+
+    def count(self, kind):
+        return len(self._texts)
+
+
+NOTES_HEADER = "Notes from the supervising session (oldest first):"
+
+
+@pytest.mark.unit
+class TestSupervisedClaudeRunnerNotes:
+
+    @pytest.mark.parametrize("label", ["task", "ci_fix", "fix_feedback", "nudge", "resume"])
+    def test_notes_are_appended_to_steerable_prompts(self, label):
+        inner = FakeClaudeRunner()
+        journal = RecordingJournal()
+        notes = QueuedNotes("use the staging cluster", "skip the soak test")
+        runner = SupervisedClaudeRunner(inner, journal, notes=notes)
+
+        runner.execute(ClaudeCodeCommand(prompt="Do the task.", cwd="/c", label=label, allowed_tools="Read"))
+
+        sent = inner.calls[0][1]
+        assert sent.prompt == (
+            f"Do the task.\n\n{NOTES_HEADER}\n- use the staging cluster\n- skip the soak test"
+        )
+        assert sent.allowed_tools == "Read"
+        assert notes.count("note") == 0
+        assert {"event": "note_delivered", "label": label, "count": 2} in journal.events
+
+    @pytest.mark.parametrize("label", ["triage", "recovery", "scaffolding", "feedback", None])
+    def test_other_labels_do_not_receive_notes(self, label):
+        inner = FakeClaudeRunner()
+        notes = QueuedNotes("keep me")
+        runner = SupervisedClaudeRunner(inner, RecordingJournal(), notes=notes)
+
+        runner.execute(ClaudeCodeCommand(prompt="p", cwd="/c", label=label))
+
+        assert inner.calls[0][1].prompt == "p"
+        assert notes.count("note") == 1
+
+    def test_mock_commands_do_not_receive_notes(self):
+        inner = FakeClaudeRunner()
+        notes = QueuedNotes("keep me")
+        runner = SupervisedClaudeRunner(inner, RecordingJournal(), notes=notes)
+
+        runner.execute(ClaudeCodeCommand(cwd="/c", mock_command=["/mock", "task"], label="task"))
+
+        assert inner.calls[0][1].mock_command == ["/mock", "task"]
+        assert notes.count("note") == 1
+
+    def test_no_queued_notes_leaves_prompt_and_journal_alone(self):
+        inner = FakeClaudeRunner()
+        journal = RecordingJournal()
+        runner = SupervisedClaudeRunner(inner, journal, notes=QueuedNotes())
+
+        runner.execute(ClaudeCodeCommand(prompt="p", cwd="/c", label="task"))
+
+        assert inner.calls[0][1].prompt == "p"
+        assert "note_delivered" not in [e["event"] for e in journal.events]
