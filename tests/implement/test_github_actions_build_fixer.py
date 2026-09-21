@@ -212,3 +212,38 @@ class TestGithubActionsBuildFixerOnFailureWait:
         )
 
         assert factory.create(FakeGitRepository())._supervisor is supervisor
+
+
+class _FixedByHandSupervisor(RecordingSupervisor):
+    """Resumes with a note after the supervisor fixed CI by hand (no failing run any more)."""
+
+    def __init__(self, fake_gh):
+        super().__init__([ResumeRequest(note="fixed by hand")])
+        self._fake_gh = fake_gh
+
+    def block(self, kind, reason, **details):
+        self._fake_gh.set_workflow_runs(_BRANCH, "aaa", [])
+        return super().block(kind, reason, **details)
+
+
+@pytest.mark.unit
+class TestGithubActionsBuildFixerNoteLifetime:
+
+    def test_unused_note_does_not_reach_a_later_ci_fix(self):
+        fake_gh = FakeGitHubClient()
+        supervisor = _FixedByHandSupervisor(fake_gh)
+        fixer, fake_repo, fake_gh, fake_runner = _make_fixer(
+            failing_run=_CI_FAILURE, supervisor=supervisor,
+            opts_overrides=dict(ci_fix_retries=1, non_interactive=True, on_failure="wait"),
+        )
+        supervisor._fake_gh = fake_gh
+
+        assert fixer.check_and_fix_ci() is True
+        assert len(fake_runner.calls) == 1
+
+        fake_gh.set_workflow_runs(_BRANCH, "aaa", [_CI_FAILURE])
+        fake_runner.set_side_effect(lambda: fake_repo.set_head_sha("bbb"))
+        fake_gh.set_workflow_completion_result(_BRANCH, "bbb", (True, None))
+
+        assert fixer.check_and_fix_ci() is True
+        assert "fixed by hand" not in fake_runner.calls[1][1].prompt

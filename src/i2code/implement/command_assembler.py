@@ -17,6 +17,18 @@ from i2code.supervision.run_journal import RunJournal
 from i2code.supervision.run_paths import RunPaths
 from i2code.supervision.run_supervisor import RunSupervisor
 from i2code.supervision.supervised_claude_runner import SupervisedClaudeRunner
+from i2code.supervision.supervisor import NullSupervisor
+
+
+def _supervised_runner(opts, repo, project, claude_runner):
+    """Journal and supervise worktree-mode runs; trunk mode stays unsupervised (out of scope)."""
+    if opts.trunk:
+        return claude_runner, NullSupervisor()
+    run_paths = RunPaths.for_idea(repo, project.name)
+    journal = RunJournal(run_paths)
+    inbox = Inbox(run_paths)
+    supervisor = RunSupervisor(journal, inbox, idea=project.name)
+    return SupervisedClaudeRunner(claude_runner, journal, notes=inbox), supervisor
 
 
 def assemble_implement(opts):
@@ -25,19 +37,11 @@ def assemble_implement(opts):
     repo = Repo(project.directory, search_parent_directories=True)
     gh_client = GitHubClient(cwd=repo.working_tree_dir)
     git_repo = GitRepository(repo, gh_client=gh_client)
-    run_paths = RunPaths.for_idea(repo, project.name)
-    journal = RunJournal(run_paths)
-    inbox = Inbox(run_paths)
-    supervisor = RunSupervisor(journal, inbox, idea=project.name)
-    claude_runner = SupervisedClaudeRunner(
-        ClaudeRunner(
-            interactive=not opts.non_interactive,
-            debug=opts.debug_claude,
-            global_args=opts.claude_global_args(),
-        ),
-        journal,
-        notes=inbox,
-    )
+    claude_runner, supervisor = _supervised_runner(opts, repo, project, ClaudeRunner(
+        interactive=not opts.non_interactive,
+        debug=opts.debug_claude,
+        global_args=opts.claude_global_args(),
+    ))
     build_fixer_factory = GithubActionsBuildFixerFactory(
         opts=opts,
         claude_runner=claude_runner,

@@ -194,3 +194,12 @@ class TestOnFailureOption:
 
     def test_not_forwarded_to_inner_command(self):
         assert "--on-failure" not in ImplementOpts(idea_directory="/tmp", on_failure="wait").inner_cli_flags()
+
+
+@pytest.mark.unit
+class TestClaudeArgsMoreOwnedFlags:
+
+    @pytest.mark.parametrize("owned", ["-r", "-c", "--continue", "--allowed-tools", "--fork-session"])
+    def test_session_and_tool_flags_are_rejected(self, owned):
+        with pytest.raises(click.UsageError, match=f"--claude-args cannot contain {owned}"):
+            ImplementOpts(idea_directory="/tmp", claude_args=f"{owned} x")

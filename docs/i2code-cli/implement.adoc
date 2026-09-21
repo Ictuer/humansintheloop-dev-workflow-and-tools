@@ -35,7 +35,8 @@ Read the extra prompt text from a UTF-8 file. Cannot be combined with `--extra-p
 
 `--claude-args TEXT`::
 Extra arguments appended to every `claude` invocation (task, CI fix, review, recovery), split like a shell, for example `--claude-args "--effort high"`.
-Flags that i2code sets itself (`-p`, `--print`, `--output-format`, `--resume`, `--session-id`, `--allowedTools`) are rejected.
+Flags that i2code sets itself (`-p`, `--print`, `--output-format`, `-r`/`--resume`, `-c`/`--continue`, `--fork-session`, `--session-id`, `--allowedTools`/`--allowed-tools`) are rejected.
+In interactive mode the prompt follows these arguments as a positional argument, so do not end them with a flag that takes values (such as `--add-dir DIR`).
 
 `--on-failure exit|wait`::
 What a worktree-mode run does when a task fails, CI-fix retries run out, or a push fails (default `exit`, the previous behaviour).

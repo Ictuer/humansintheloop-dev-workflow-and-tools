@@ -78,6 +78,7 @@ class GithubActionsBuildFixer:
                 sys.exit(1)
             self._block_until_resumed(workflow_name)
 
+        self._supervisor_note = None
         return True
 
     def _block_until_resumed(self, workflow_name):

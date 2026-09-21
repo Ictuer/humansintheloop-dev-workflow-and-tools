@@ -80,3 +80,15 @@ class TestAssembleImplementJournal:
         notes = command.mode_factory._claude_runner._notes
 
         assert notes.paths == RunPaths.for_idea(Repo(tmp_path), "demo")
+
+
+@pytest.mark.unit
+class TestAssembleImplementTrunkIsNotSupervised:
+
+    def test_trunk_mode_runner_writes_no_journal(self, idea_dir, tmp_path):
+        command = assemble_implement(ImplementOpts(idea_directory=str(idea_dir), non_interactive=True, trunk=True))
+
+        command.mode_factory._claude_runner.execute(
+            ClaudeCodeCommand(cwd=str(tmp_path), mock_command=["true"], label="task"))
+
+        assert not RunPaths.for_idea(Repo(tmp_path), "demo").events_file.exists()

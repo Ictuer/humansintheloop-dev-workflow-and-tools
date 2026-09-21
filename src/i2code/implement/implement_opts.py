@@ -6,7 +6,8 @@ from dataclasses import dataclass, fields
 import click
 
 CLAUDE_FLAGS_OWNED_BY_I2CODE = (
-    "-p", "--print", "--output-format", "--resume", "--session-id", "--allowedTools",
+    "-p", "--print", "--output-format", "-r", "--resume", "-c", "--continue", "--fork-session", "--session-id",
+    "--allowedTools", "--allowed-tools",
 )
 
 

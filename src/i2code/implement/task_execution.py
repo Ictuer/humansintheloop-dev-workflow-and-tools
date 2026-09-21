@@ -141,5 +141,6 @@ class TaskExecution:
             self._opts.non_interactive
             and claude_result.returncode == 0
             and claude_result.outcome == "missing"
+            and "<SUCCESS>" not in claude_result.output.stdout
             and claude_result.session_id is not None
         )

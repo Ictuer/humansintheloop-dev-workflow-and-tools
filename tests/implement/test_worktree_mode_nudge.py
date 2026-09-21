@@ -113,3 +113,17 @@ class TestNudgeMissingTag:
             task, nudge = fake_runner.calls[0][1], fake_runner.calls[1][1]
             assert nudge.session_id == SessionId("s-1", is_new=False)
             assert nudge.allowed_tools == task.allowed_tools
+
+
+@pytest.mark.unit
+class TestNudgeAgreesWithValidation:
+
+    def test_success_in_stdout_is_not_nudged_even_if_final_text_has_no_tag(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = ClaudeResult(returncode=0, output=CapturedOutput(f"...{SUCCESS}...\nDone."),
+                                  result_text="Done.", session_id="s-1")
+            mode, runner = _mode(tmpdir, [result])
+
+            mode.execute()
+
+            assert len(runner.calls) == 1

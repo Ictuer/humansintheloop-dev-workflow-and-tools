@@ -261,14 +261,14 @@ Fixes from an independent review of the branch: journal robustness, exit-path jo
     - [x] Write failing tests for a stale resume before the block and for two resumes in one poll
     - [x] Discard stale resumes on entry and merge concurrent ones
 
-- [ ] **Task 5.4: Small correctness fixes from review**
+- [x] **Task 5.4: Small correctness fixes from review**
   - TaskType: OUTCOME
   - Entrypoint: `i2code implement <idea-dir> --non-interactive with supervision options`
   - Observable: A CI-fix note is cleared when the loop ends without using it; a result whose stdout already has <SUCCESS> is not nudged; trunk mode is not journaled and takes no notes; --claude-args also rejects -r, -c, --continue, --allowed-tools and --fork-session; docs state that notes are delivered once and that interactive --claude-args must not end with a flag that takes a value
   - Evidence: `uv run python -m pytest tests/implement -m unit`
   - Steps:
-    - [ ] Write failing tests for each fix
-    - [ ] Implement the fixes and update docs
+    - [x] Write failing tests for each fix
+    - [x] Implement the fixes and update docs
 
 ---
 
@@ -354,3 +354,6 @@ Unexpected exception → run_finished failed exit 1, re-raised; implement unit 5
 
 ### 2026-09-21 23:12 - mark-task-complete
 Stale resumes discarded on block entry; resumes in one poll merged (notes joined, fresh from newest, merged count journaled); 74 passed
+
+### 2026-09-21 23:14 - mark-task-complete
+CI-fix note cleared, nudge skipped when stdout has SUCCESS, trunk unsupervised, more owned flags rejected, docs; unit+integration 1665 passed

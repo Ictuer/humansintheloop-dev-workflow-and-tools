@@ -55,6 +55,7 @@ Notes from the supervising session (oldest first):
 ----
 
 `status` shows how many notes are still queued.
+A note is delivered once: if that invocation fails and the task is retried in a new session, send the note again.
 
 === `resume`
 
