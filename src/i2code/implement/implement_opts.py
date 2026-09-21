@@ -36,6 +36,7 @@ class ImplementOpts:
     claude_args: str | None = None
     allow_push: bool = False
     nudge_missing_tag: int = 0
+    on_failure: str = "exit"
 
     _INNER_FORWARDED = {
         "cleanup",
@@ -54,6 +55,7 @@ class ImplementOpts:
     }
 
     _INNER_IGNORED = {
+        "on_failure",
         "idea_directory",
         "isolate",
         "isolation_type",
@@ -99,6 +101,8 @@ class ImplementOpts:
             incompatible.append("--ci-timeout")
         if self.nudge_missing_tag != 0:
             incompatible.append("--nudge-missing-tag")
+        if self.on_failure != "exit":
+            incompatible.append("--on-failure")
         if incompatible:
             raise click.UsageError(
                 f"--trunk cannot be combined with: {', '.join(incompatible)}"

@@ -46,6 +46,25 @@ class CommandBuilder:
             label="nudge",
         )
 
+    def build_resume_command(
+        self, original: ClaudeCodeCommand, session_id: str, note: Optional[str],
+    ) -> ClaudeCodeCommand:
+        """Continue the blocked session of ``original`` with the supervisor's note."""
+        if original.mock_command is not None:
+            return replace(original, mock_command=[original.mock_command[0], f"resume-{session_id}"], label="resume")
+        return replace(
+            original,
+            prompt=render_template("supervisor_resume.j2", package="i2code.implement", note=note),
+            session_id=SessionId(session_id, is_new=False),
+            label="resume",
+        )
+
+    def build_fresh_task_command(self, original: ClaudeCodeCommand, note: Optional[str]) -> ClaudeCodeCommand:
+        """Start the task again in a new session, with the supervisor's note after the task prompt."""
+        if note is None or original.mock_command is not None:
+            return original
+        return replace(original, prompt=f"{original.prompt}\n\nMessage from the supervising session:\n{note}")
+
     def build_recovery_command(
         self,
         plan_file: str,

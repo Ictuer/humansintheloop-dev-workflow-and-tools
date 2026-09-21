@@ -2,6 +2,7 @@
 
 import sys
 
+import click
 from dotenv import load_dotenv
 
 from i2code.implement.timing import Timer, timed
@@ -126,6 +127,8 @@ class ImplementCommand:
             self.opts.isolate = True
         if self.opts.shell:
             self.opts.isolate = True
+        if self.opts.isolate and self.opts.on_failure == "wait":
+            raise click.UsageError("--on-failure wait cannot be combined with --isolate")
 
     def _check_idea_files_committed(self):
         if not self.opts.isolated and not self.opts.ignore_uncommitted_idea_changes:

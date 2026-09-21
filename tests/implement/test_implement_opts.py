@@ -182,3 +182,15 @@ class TestNudgeMissingTagOption:
         opts = ImplementOpts(idea_directory="/tmp", trunk=True, nudge_missing_tag=1)
         with pytest.raises(click.UsageError, match="--nudge-missing-tag"):
             opts.validate_trunk_options()
+
+
+@pytest.mark.unit
+class TestOnFailureOption:
+
+    def test_trunk_rejects_wait(self):
+        opts = ImplementOpts(idea_directory="/tmp", trunk=True, on_failure="wait")
+        with pytest.raises(click.UsageError, match="--on-failure"):
+            opts.validate_trunk_options()
+
+    def test_not_forwarded_to_inner_command(self):
+        assert "--on-failure" not in ImplementOpts(idea_directory="/tmp", on_failure="wait").inner_cli_flags()

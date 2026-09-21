@@ -4,7 +4,7 @@ from dataclasses import replace
 from typing import Any, Dict, List, Optional, Protocol
 
 from i2code.implement.claude_runner import ClaudeCodeCommand, ClaudeResult
-from i2code.supervision.supervisor import Supervisor
+from i2code.supervision.supervisor import EventRecorder
 
 SUMMARY_LENGTH = 300
 STEERABLE_LABELS = frozenset({"task", "ci_fix", "fix_feedback", "nudge", "resume"})
@@ -43,7 +43,7 @@ def _resumed_session(command: ClaudeCodeCommand) -> Optional[str]:
 class SupervisedClaudeRunner:
     """Decorates a Claude runner: journals each invocation and delivers queued supervisor notes."""
 
-    def __init__(self, inner: ClaudeExecutor, journal: Supervisor, notes: NoteQueue = NoNotes()):
+    def __init__(self, inner: ClaudeExecutor, journal: EventRecorder, notes: NoteQueue = NoNotes()):
         self.inner = inner
         self._journal = journal
         self._notes = notes

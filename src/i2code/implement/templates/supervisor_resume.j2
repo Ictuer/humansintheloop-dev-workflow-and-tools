@@ -1,0 +1,12 @@
+The run was blocked after your previous turn. The supervising session has looked at it and resumed the run.
+{% if note %}
+
+Message from the supervising session:
+{{ note }}
+{% endif %}
+
+Continue the task from where you left off; do not redo steps that are already done. Wait for long-running commands and CI in the foreground.
+
+Before ending your turn, output exactly one of:
+- <SUCCESS>task implemented: COMMIT_SHA</SUCCESS> once the task is committed and marked complete in the plan file
+- <FAILURE>what still blocks you, including any permission you need</FAILURE>

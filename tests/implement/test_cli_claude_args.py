@@ -53,3 +53,24 @@ class TestNudgeMissingTagCli:
 
         assert result.exit_code == 2
         assert received_opts == []
+
+
+@pytest.mark.unit
+class TestOnFailureCli:
+
+    def test_wait_reaches_opts(self):
+        result, received_opts = _invoke(["--on-failure", "wait"])
+
+        assert result.exit_code == 0, result.output
+        assert received_opts[0].on_failure == "wait"
+
+    def test_default_is_exit(self):
+        _, received_opts = _invoke([])
+
+        assert received_opts[0].on_failure == "exit"
+
+    def test_unknown_value_is_usage_error(self):
+        result, received_opts = _invoke(["--on-failure", "ignore"])
+
+        assert result.exit_code == 2
+        assert received_opts == []

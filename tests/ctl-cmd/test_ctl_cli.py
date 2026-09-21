@@ -159,3 +159,55 @@ class TestCtlNote:
 
         assert "queued notes: 2" in _invoke("status", "demo").output
         assert json.loads(_invoke("status", "demo", "--json").output)["queued_notes"] == 2
+
+
+def _block(journal):
+    journal.record("blocked", kind="task", reason="failure_tag", task="1.2", detail="d", session_id="s-1",
+                   permission_denials=[])
+
+
+@pytest.mark.unit
+class TestCtlResume:
+
+    def test_resume_blocked_run_posts_request(self, repo):
+        journal = _journal(repo)
+        _start_run(journal)
+        _block(journal)
+
+        result = _invoke("resume", "demo", "--note", "copied lefthook.yml", "--fresh")
+
+        assert result.exit_code == 0
+        assert "resume requested for demo" in result.output
+        assert Inbox(RunPaths.for_idea(repo, "demo")).take("resume") == [
+            {"kind": "resume", "note": "copied lefthook.yml", "fresh": True},
+        ]
+
+    def test_resume_defaults(self, repo):
+        journal = _journal(repo)
+        _start_run(journal)
+        _block(journal)
+
+        _invoke("resume", "demo")
+
+        assert Inbox(RunPaths.for_idea(repo, "demo")).take("resume") == [
+            {"kind": "resume", "note": None, "fresh": False},
+        ]
+
+    def test_resume_refuses_when_not_blocked(self, repo):
+        _start_run(_journal(repo))
+
+        result = CliRunner().invoke(ctl, ["resume", "demo"])
+
+        assert result.exit_code == 1
+        assert "demo is not blocked (state: running)" in result.output
+        assert Inbox(RunPaths.for_idea(repo, "demo")).count("resume") == 0
+
+    def test_resume_refuses_when_run_is_dead(self, repo):
+        journal = _journal(repo)
+        _start_run(journal, pid=DEAD_PID)
+        _block(journal)
+
+        result = CliRunner().invoke(ctl, ["resume", "demo"])
+
+        assert result.exit_code == 1
+        assert "not running" in result.output

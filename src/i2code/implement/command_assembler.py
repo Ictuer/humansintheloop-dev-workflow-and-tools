@@ -15,6 +15,7 @@ from i2code.implement.scaffold_command import ScaffoldCommand
 from i2code.supervision.inbox import Inbox
 from i2code.supervision.run_journal import RunJournal
 from i2code.supervision.run_paths import RunPaths
+from i2code.supervision.run_supervisor import RunSupervisor
 from i2code.supervision.supervised_claude_runner import SupervisedClaudeRunner
 
 
@@ -26,6 +27,8 @@ def assemble_implement(opts):
     git_repo = GitRepository(repo, gh_client=gh_client)
     run_paths = RunPaths.for_idea(repo, project.name)
     journal = RunJournal(run_paths)
+    inbox = Inbox(run_paths)
+    supervisor = RunSupervisor(journal, inbox, idea=project.name)
     claude_runner = SupervisedClaudeRunner(
         ClaudeRunner(
             interactive=not opts.non_interactive,
@@ -33,7 +36,7 @@ def assemble_implement(opts):
             global_args=opts.claude_global_args(),
         ),
         journal,
-        notes=Inbox(run_paths),
+        notes=inbox,
     )
     build_fixer_factory = GithubActionsBuildFixerFactory(
         opts=opts,
@@ -43,7 +46,7 @@ def assemble_implement(opts):
         opts=opts,
         claude_runner=claude_runner,
         build_fixer_factory=build_fixer_factory,
-        supervisor=journal,
+        supervisor=supervisor,
     )
     return ImplementCommand(opts, project, git_repo, mode_factory)
 

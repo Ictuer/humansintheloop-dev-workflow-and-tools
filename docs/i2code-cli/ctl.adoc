@@ -56,6 +56,19 @@ Notes from the supervising session (oldest first):
 
 `status` shows how many notes are still queued.
 
+=== `resume`
+
+[source,shell]
+----
+i2code ctl resume IDEA [--note TEXT] [--fresh]
+----
+
+Resumes a run that is blocked (`implement --on-failure wait`).
+By default the blocked Claude session continues (`claude --resume`) with a prompt that carries `--note`;
+`--fresh` (or a failure without a session id) starts the task again in a new session, with the note after the task prompt.
+The result is validated as usual; if it fails again, the run blocks again.
+Exits 1 without doing anything when the run is not alive or not blocked.
+
 == Events
 
 [cols="1,3",options="header"]
@@ -70,7 +83,10 @@ Notes from the supervising session (oldest first):
 | `task_completed` | `task`, `duration_s`, `head`
 | `pushed` | `head`
 | `ci_waiting` / `ci_finished` | `head` / `head`, `success`, `failing_workflow`
-| `run_finished` | `status` (`completed`, `failed`), `exit_code`
+| `blocked` | `kind` (`task`), `reason` (`failure_tag`, `missing_tag`, `attempts_exhausted`; after a resume also `no_commit`, `not_marked_complete`, `no_ci_workflow`), `task`, `detail`, `session_id`, `permission_denials`
+| `resumed` | `mode` (`continue`, `fresh`), `note`
+| `stop_requested` | —
+| `run_finished` | `status` (`completed`, `stopped`, `failed`), `exit_code`
 |===
 
 Every event also has `ts` (ISO 8601 with UTC offset) and `event`.

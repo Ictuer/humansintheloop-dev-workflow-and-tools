@@ -103,6 +103,11 @@ While blocked, i2code prints one line naming the reason and the `ctl` commands, 
 
 `--on-failure=wait` together with `--isolate` or `--trunk` is a usage error.
 
+Decided during implementation: with `wait`, an explicit `<FAILURE>` blocks at once even when Claude made no
+commit (the default `exit` keeps retrying it in new sessions, as before), because a new session would hit the same
+blocker. A resumed invocation that fails validation for another reason blocks with that reason (`no_commit`,
+`not_marked_complete`, `no_ci_workflow`).
+
 ## 8. Graceful stop
 
 `stop` is honoured at the top of the task loop, in the review poll loop, and while blocked. i2code then writes

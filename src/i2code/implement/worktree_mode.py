@@ -6,19 +6,13 @@ import time
 from dataclasses import dataclass, field
 
 from i2code.claude.permissions import calculate_claude_permissions
-from i2code.implement.git_setup import (
-    has_ci_workflow_files,
-)
-from i2code.implement.claude_runner import (
-    ClaudeCodeCommand,
-    check_claude_success,
-    print_task_failure_diagnostics,
-)
+from i2code.implement.claude_runner import ClaudeCodeCommand
 from i2code.implement.command_builder import CommandBuilder, TaskCommandOpts
 from i2code.implement.pr_helpers import is_pr_complete
 from i2code.implement.timing import Timer, timed
 from i2code.implement.console import print_message
-from i2code.supervision.supervisor import NullSupervisor, Supervisor
+from i2code.implement.task_execution import TaskExecution
+from i2code.supervision.supervisor import NullSupervisor, RunStopped, Supervisor
 
 REVIEW_POLL_INTERVAL_SECONDS = 30
 
@@ -81,9 +75,14 @@ class WorktreeMode:
         self._supervisor.record(
             "run_started", pid=os.getpid(), idea=self._work_project.name,
             branch=self._git_repo.branch, worktree=self._git_repo.working_tree_dir,
+            on_failure=self._opts.on_failure, nudge_missing_tag=self._opts.nudge_missing_tag,
         )
         try:
             self._run_loop()
+        except RunStopped:
+            print_message("Stopped by the supervising session.")
+            self._supervisor.record("run_finished", status="stopped", exit_code=0)
+            return
         except SystemExit as exit_request:
             self._record_run_finished(_exit_code(exit_request))
             raise
@@ -175,56 +174,10 @@ class WorktreeMode:
         self._loop_steps.ci_monitor.wait_for_workflow_completion(self._git_repo.branch, self._git_repo.head_sha)
 
     def _run_claude_and_validate(self, next_task, task_description):
-        """Run Claude on the task and validate the result, retrying up to 3 times."""
-        max_attempts = 3
-        claude_cmd = self._build_command(task_description)
-        head_before = self._git_repo.head_sha
-
-        for attempt in range(1, max_attempts + 1):
-            print_message(f"Running Claude (attempt {attempt}/{max_attempts})...")
-
-            claude_result = self._nudge_until_tagged(claude_cmd, self._run_claude(claude_cmd))
-            head_after = self._git_repo.head_sha
-
-            if not check_claude_success(claude_result.returncode, head_before, head_after):
-                print_task_failure_diagnostics(claude_result, head_before, head_after)
-                continue
-
-            if self._opts.non_interactive and "<SUCCESS>" not in claude_result.output.stdout:
-                print_task_failure_diagnostics(claude_result, head_before, head_after)
-                sys.exit(1)
-
-            if not self._work_project.is_task_completed(next_task.number.thread, next_task.number.task):
-                print("Error: Task was not marked complete in plan file.", file=sys.stderr)
-                continue
-
-            if not has_ci_workflow_files(self._git_repo.working_tree_dir):
-                print("Error: No GitHub Actions workflow file found in .github/workflows/", file=sys.stderr)
-                print("Tasks must create a CI workflow (e.g., .github/workflows/ci.yml) before pushing.", file=sys.stderr)
-                continue
-
-            return
-
-        print(f"Error: Task failed after {max_attempts} attempts.", file=sys.stderr)
-        sys.exit(1)
-
-    def _nudge_until_tagged(self, claude_cmd, claude_result):
-        """Resume a session that exited cleanly without an outcome tag, up to --nudge-missing-tag times."""
-        for _ in range(self._opts.nudge_missing_tag):
-            if not self._needs_nudge(claude_result):
-                break
-            print_message("Claude ended without an outcome tag; resuming its session to ask for one...")
-            nudge_cmd = CommandBuilder().build_nudge_command(claude_cmd, claude_result.session_id)
-            claude_result = self._run_claude(nudge_cmd)
-        return claude_result
-
-    def _needs_nudge(self, claude_result):
-        return (
-            self._opts.non_interactive
-            and claude_result.returncode == 0
-            and claude_result.outcome == "missing"
-            and claude_result.session_id is not None
-        )
+        """Run Claude on the task until it passes validation (see TaskExecution)."""
+        TaskExecution(
+            self._opts, self._git_repo, self._work_project, self._loop_steps.claude_runner, self._supervisor,
+        ).run(next_task, self._build_command(task_description))
 
     def _push_and_ensure_pr(self):
         """Push changes and create a Draft PR if one doesn't exist."""
@@ -279,6 +232,3 @@ class WorktreeMode:
             ),
             cwd=cwd,
         )
-
-    def _run_claude(self, claude_cmd):
-        return self._loop_steps.claude_runner.execute(claude_cmd)

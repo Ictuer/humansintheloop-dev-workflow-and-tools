@@ -169,18 +169,18 @@ Lets a supervising session steer and unblock a running implement instead of kill
     - [x] Write failing WorktreeMode tests: nudge then SUCCESS passes; nudge still missing exits as today; FAILURE tag is not nudged; no session id is not nudged
     - [x] Add nudge_missing_tag to CLI and ImplementOpts and implement the nudge loop in _run_claude_and_validate
 
-- [ ] **Task 3.3: --on-failure=wait blocks a failed task until i2code ctl resume**
+- [x] **Task 3.3: --on-failure=wait blocks a failed task until i2code ctl resume**
   - TaskType: OUTCOME
   - Entrypoint: `i2code implement <idea-dir> --non-interactive --on-failure wait; i2code ctl resume <idea> [--note TEXT] [--fresh]`
   - Observable: A task that ends with <FAILURE>, with a missing tag after nudges, or with all attempts exhausted journals blocked (kind task, reason, detail, session id, permission denials), prints one line with the ctl commands, and polls the inbox every 5 s; resume continues the blocked session with the resume prompt (or a fresh session with --fresh or without a session id) and validates the result, blocking again on failure; ctl resume refuses when the run is not blocked or not alive; --on-failure wait with --trunk or --isolate is a usage error
   - Evidence: `uv run python -m pytest tests/implement/test_worktree_mode_blocked.py tests/ctl -m unit`
   - Steps:
-    - [ ] Write failing Supervisor.block tests with an injected sleep: resume message returns a ResumeRequest, stop returns Stop, notes stay queued
-    - [ ] Implement Supervisor, NullSupervisor and the blocked/resumed events
-    - [ ] Add supervisor_resume.j2 and build_resume_command with a failing CommandBuilder test first
-    - [ ] Write failing WorktreeMode tests for each block reason followed by resume (continue and fresh) and by a second failure
-    - [ ] Add on_failure to CLI and ImplementOpts with validation, and route task failures through the supervisor
-    - [ ] Write failing CliRunner tests for ctl resume (blocked, not blocked, dead) and implement it
+    - [x] Write failing Supervisor.block tests with an injected sleep: resume message returns a ResumeRequest, stop returns Stop, notes stay queued
+    - [x] Implement Supervisor, NullSupervisor and the blocked/resumed events
+    - [x] Add supervisor_resume.j2 and build_resume_command with a failing CommandBuilder test first
+    - [x] Write failing WorktreeMode tests for each block reason followed by resume (continue and fresh) and by a second failure
+    - [x] Add on_failure to CLI and ImplementOpts with validation, and route task failures through the supervisor
+    - [x] Write failing CliRunner tests for ctl resume (blocked, not blocked, dead) and implement it
 
 - [ ] **Task 3.4: CI-fix exhaustion and push failure also block with --on-failure=wait**
   - TaskType: OUTCOME
@@ -282,3 +282,6 @@ Inbox (atomic post/take/count/discard), ctl note + queued count, note injection 
 
 ### 2026-09-21 22:12 - mark-task-complete
 build_nudge_command + outcome_nudge.j2; WorktreeMode nudges missing-tag sessions (incl. uncommitted work), not FAILURE/no session/default; opts forwarded, trunk rejects; unit suite 1587 passed
+
+### 2026-09-21 22:28 - mark-task-complete
+RunSupervisor block/resume/stop, TaskExecution (extracted) blocks on failure_tag/missing_tag/attempts_exhausted, resume continue/fresh, ctl resume, --on-failure CLI + trunk/isolate rejection; unit 1620 passed, pyright 0

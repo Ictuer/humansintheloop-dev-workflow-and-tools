@@ -7,7 +7,7 @@ from pathlib import Path
 import click
 from git import Repo
 
-from i2code.ctl_cmd.status_view import describe, is_alive
+from i2code.ctl_cmd.status_view import FINAL_STATES, describe, is_alive
 from i2code.idea.resolver import resolve_idea_directory
 from i2code.supervision.inbox import Inbox
 from i2code.supervision.run_journal import fold_status, read_events
@@ -57,6 +57,27 @@ def note_cmd(idea, text):
     inbox = Inbox(paths)
     inbox.post("note", text=text)
     click.echo(f"queued note for {name} ({inbox.count('note')} pending)")
+
+
+def _live_status(name, paths):
+    status = fold_status(read_events(paths))
+    if status["state"] in FINAL_STATES or status["state"] == "none" or not is_alive(status["pid"]):
+        raise click.ClickException(f"{name} is not running (state: {status['state']})")
+    return status
+
+
+@ctl.command("resume")
+@click.argument("idea")
+@click.option("--note", metavar="TEXT", help="Message for Claude when the blocked task continues")
+@click.option("--fresh", is_flag=True, help="Start the task in a new Claude session instead of continuing the blocked one")
+def resume_cmd(idea, note, fresh):
+    """Resume a run that is blocked (implement --on-failure wait)."""
+    name, paths = _locate(idea)
+    status = _live_status(name, paths)
+    if status["state"] != "blocked":
+        raise click.ClickException(f"{name} is not blocked (state: {status['state']})")
+    Inbox(paths).post("resume", note=note, fresh=fresh)
+    click.echo(f"resume requested for {name}")
 
 
 @ctl.command("events")

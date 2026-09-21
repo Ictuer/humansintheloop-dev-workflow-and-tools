@@ -459,3 +459,16 @@ class TestDeferredPRCreation:
         mock_wt_git_repo.gh_client.find_pr.assert_not_called()
 
 
+
+
+@pytest.mark.unit
+class TestOnFailureWaitWithIsolate:
+
+    @pytest.mark.parametrize("overrides", [dict(isolate=True), dict(isolation_type="docker")])
+    def test_wait_with_isolate_is_usage_error(self, overrides):
+        import click
+
+        cmd, *_ = _make_command(on_failure="wait", ignore_uncommitted_idea_changes=True, **overrides)
+
+        with pytest.raises(click.UsageError, match="--on-failure wait cannot be combined with --isolate"):
+            cmd.execute()

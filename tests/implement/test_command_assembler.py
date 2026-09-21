@@ -9,6 +9,7 @@ from i2code.implement.claude_runner import ClaudeCodeCommand
 from i2code.implement.command_assembler import assemble_implement
 from i2code.implement.implement_opts import ImplementOpts
 from i2code.supervision.run_paths import RunPaths
+from i2code.supervision.run_supervisor import RunSupervisor
 
 
 @pytest.fixture
@@ -66,8 +67,11 @@ class TestAssembleImplementJournal:
             work_project=command.project,
         )
 
-        assert mode._loop_steps.supervisor is journal
-        assert mode._loop_steps.ci_monitor._supervisor is journal
+        supervisor = mode._loop_steps.supervisor
+        assert isinstance(supervisor, RunSupervisor)
+        assert supervisor._journal is journal
+        assert supervisor._inbox.paths == RunPaths.for_idea(Repo(tmp_path), "demo")
+        assert mode._loop_steps.ci_monitor._supervisor is supervisor
 
     def test_runner_takes_notes_from_the_idea_inbox(self, idea_dir, tmp_path):
         command = assemble_implement(ImplementOpts(idea_directory=str(idea_dir), non_interactive=True))

@@ -455,3 +455,48 @@ class TestCommandBuilderNudgeCommand:
 
         assert nudge.mock_command == ["/mock", "nudge-s-1"]
         assert nudge.label == "nudge"
+
+
+@pytest.mark.unit
+class TestCommandBuilderResumeCommands:
+    """Commands used when the supervisor resumes a blocked task."""
+
+    def _task(self):
+        return _build_task_cmd(opts=TaskCommandOpts(interactive=False, extra_cli_args=["--allowedTools", "Read"]))
+
+    def test_continue_resumes_the_session_with_the_note(self):
+        resume = CommandBuilder().build_resume_command(self._task(), "s-1", note="I copied lefthook.yml for you")
+
+        assert resume.label == "resume"
+        assert resume.session_id is not None
+        assert resume.session_id.session_id == "s-1" and resume.session_id.is_new is False
+        assert resume.allowed_tools == "Read"
+        assert "I copied lefthook.yml for you" in resume.prompt
+        assert "Continue the task from where you left off" in resume.prompt
+        assert "<SUCCESS>task implemented: COMMIT_SHA</SUCCESS>" in resume.prompt
+
+    def test_continue_without_note(self):
+        resume = CommandBuilder().build_resume_command(self._task(), "s-1", note=None)
+
+        assert "Message from the supervising session" not in resume.prompt
+
+    def test_fresh_repeats_the_task_prompt_with_the_note(self):
+        task = self._task()
+
+        fresh = CommandBuilder().build_fresh_task_command(task, note="Use the staging cluster")
+
+        assert fresh.label == "task"
+        assert fresh.session_id is None
+        assert fresh.prompt.startswith(task.prompt)
+        assert fresh.prompt.endswith("Message from the supervising session:\nUse the staging cluster")
+
+    def test_fresh_without_note_is_the_task_command(self):
+        task = self._task()
+
+        assert CommandBuilder().build_fresh_task_command(task, note=None) == task
+
+    def test_mock_commands(self):
+        mock = ClaudeCodeCommand(cwd="/c", mock_command=["/mock", "Task 1.1"], label="task")
+
+        assert CommandBuilder().build_resume_command(mock, "s-1", note="n").mock_command == ["/mock", "resume-s-1"]
+        assert CommandBuilder().build_fresh_task_command(mock, note="n").mock_command == ["/mock", "Task 1.1"]
