@@ -6,20 +6,23 @@ from typing import Any, Dict, Optional
 from i2code.implement.claude_runner import ClaudeCodeCommand
 from i2code.implement.command_builder import CiFixRequest, CommandBuilder
 from i2code.implement.console import print_message
+from i2code.supervision.supervisor import NullSupervisor, Supervisor
 
 
 class GithubActionsBuildFixerFactory:
     """Creates GithubActionsBuildFixer instances with a specific git_repo."""
 
-    def __init__(self, opts, claude_runner):
+    def __init__(self, opts, claude_runner, supervisor: Supervisor = NullSupervisor()):
         self._opts = opts
         self._claude_runner = claude_runner
+        self._supervisor = supervisor
 
     def create(self, git_repo):
         return GithubActionsBuildFixer(
             opts=self._opts,
             git_repo=git_repo,
             claude_runner=self._claude_runner,
+            supervisor=self._supervisor,
         )
 
 
@@ -30,12 +33,15 @@ class GithubActionsBuildFixer:
         opts: ImplementOpts with execution parameters.
         git_repo: GitRepository (or FakeGitRepository) for branch/push/CI operations.
         claude_runner: ClaudeRunner (or FakeClaudeRunner) for invoking Claude.
+        supervisor: Blocks the run when retries are exhausted and --on-failure=wait.
     """
 
-    def __init__(self, opts, git_repo, claude_runner):
+    def __init__(self, opts, git_repo, claude_runner, supervisor: Supervisor = NullSupervisor()):
         self._opts = opts
         self._git_repo = git_repo
         self._claude_runner = claude_runner
+        self._supervisor = supervisor
+        self._supervisor_note = None
 
     def _get_failing_workflow_run(
         self, branch: str, sha: str,
@@ -66,11 +72,22 @@ class GithubActionsBuildFixer:
         print_message(f"CI build failing for HEAD ({self._git_repo.head_sha[:8]}): {workflow_name}")
         print_message("Attempting to fix CI failure...")
 
-        if not self.fix_ci_failure():
+        while not self.fix_ci_failure():
             print("Error: Could not fix CI failure after max retries", file=sys.stderr)
-            sys.exit(1)
+            if self._opts.on_failure != "wait":
+                sys.exit(1)
+            self._block_until_resumed(workflow_name)
 
         return True
+
+    def _block_until_resumed(self, workflow_name):
+        resume = self._supervisor.block(
+            "ci_fix", "ci_retries_exhausted", task=None,
+            detail=f"{workflow_name} still failing on {self._git_repo.head_sha[:8]} "
+                   f"after {self._opts.ci_fix_retries} fix attempts",
+            session_id=None, permission_denials=[],
+        )
+        self._supervisor_note = resume.note
 
     def fix_ci_failure(self):
         """Attempt to fix CI failure using tracked branch and HEAD.
@@ -155,5 +172,8 @@ class GithubActionsBuildFixer:
                 interactive=interactive,
             )
 
+        if self._supervisor_note:
+            claude_cmd = CommandBuilder().with_supervisor_message(claude_cmd, self._supervisor_note)
+            self._supervisor_note = None
         print_message("  Invoking Claude to fix CI failure...")
         self._claude_runner.execute(claude_cmd)

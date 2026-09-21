@@ -4,17 +4,19 @@ import pytest
 
 from i2code.implement.claude_runner import ClaudeCodeCommand
 from i2code.implement.command_builder import CiFixRequest, CommandBuilder
-from i2code.implement.github_actions_build_fixer import GithubActionsBuildFixer
+from i2code.implement.github_actions_build_fixer import GithubActionsBuildFixer, GithubActionsBuildFixerFactory
+from i2code.supervision.supervisor import ResumeRequest, RunStopped
 from i2code.implement.implement_opts import ImplementOpts
 
 from fake_claude_runner import FakeClaudeRunner
 from fake_git_repository import FakeGitRepository
 from fake_github_client import FakeGitHubClient
+from fake_supervisor import RecordingSupervisor
 
 _BRANCH = "idea/test/01-setup"
 
 
-def _make_fixer(pushed=True, failing_run=None, opts_overrides=None):
+def _make_fixer(pushed=True, failing_run=None, opts_overrides=None, supervisor=None):
     """Create a GithubActionsBuildFixer with common test defaults.
 
     Returns (fixer, fake_repo, fake_gh, fake_runner_or_None).
@@ -36,6 +38,7 @@ def _make_fixer(pushed=True, failing_run=None, opts_overrides=None):
     fixer = GithubActionsBuildFixer(
         opts=ImplementOpts(**defaults), git_repo=fake_repo,
         claude_runner=fake_runner,
+        **({"supervisor": supervisor} if supervisor else {}),
     )
     return fixer, fake_repo, fake_gh, fake_runner
 
@@ -167,3 +170,45 @@ class TestGithubActionsBuildFixerMockLabel:
         fixer.check_and_fix_ci()
 
         assert fake_runner.calls[0][1].label == "ci_fix"
+
+
+
+@pytest.mark.unit
+class TestGithubActionsBuildFixerOnFailureWait:
+    """With --on-failure wait, exhausted CI-fix retries block until the supervisor resumes."""
+
+    def test_exhausted_retries_block_then_resume_runs_the_fix_loop_again(self):
+        supervisor = RecordingSupervisor([ResumeRequest(note="the flaky test is known; skip it")])
+        fixer, fake_repo, fake_gh, fake_runner = _make_fixer(
+            failing_run=_CI_FAILURE, supervisor=supervisor,
+            opts_overrides=dict(ci_fix_retries=1, non_interactive=True, on_failure="wait"),
+        )
+        fake_runner.set_side_effects([lambda: None, lambda: fake_repo.set_head_sha("bbb")])
+        fake_gh.set_workflow_completion_result(_BRANCH, "bbb", (True, None))
+
+        assert fixer.check_and_fix_ci() is True
+
+        blocked = supervisor.first("blocked")
+        assert blocked["kind"] == "ci_fix" and blocked["reason"] == "ci_retries_exhausted"
+        assert "CI" in blocked["detail"]
+        assert len(fake_runner.calls) == 2
+        second_prompt = fake_runner.calls[1][1].prompt
+        assert second_prompt.endswith("Message from the supervising session:\nthe flaky test is known; skip it")
+
+    def test_stop_while_blocked_propagates(self):
+        supervisor = RecordingSupervisor([RunStopped()])
+        fixer, _, _, _ = _make_fixer(
+            failing_run=_CI_FAILURE, supervisor=supervisor,
+            opts_overrides=dict(ci_fix_retries=1, non_interactive=True, on_failure="wait"),
+        )
+
+        with pytest.raises(RunStopped):
+            fixer.check_and_fix_ci()
+
+    def test_factory_passes_supervisor(self):
+        supervisor = RecordingSupervisor()
+        factory = GithubActionsBuildFixerFactory(
+            opts=ImplementOpts(idea_directory="/i"), claude_runner=FakeClaudeRunner(), supervisor=supervisor,
+        )
+
+        assert factory.create(FakeGitRepository())._supervisor is supervisor

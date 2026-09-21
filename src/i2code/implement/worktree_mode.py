@@ -184,9 +184,12 @@ class WorktreeMode:
         print_message("Pushing changes...")
 
         with timed("push"):
-            if not self._git_repo.push():
+            while not self._git_repo.push():
                 print("Error: Could not push commit to branch", file=sys.stderr)
-                sys.exit(1)
+                if self._opts.on_failure != "wait":
+                    sys.exit(1)
+                self._supervisor.block("push", "push_failed", task=None, detail="git push failed",
+                                       session_id=None, permission_denials=[])
         self._supervisor.record("pushed", head=self._git_repo.head_sha)
 
         if self._git_repo.pr_number is None:

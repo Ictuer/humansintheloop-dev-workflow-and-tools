@@ -483,7 +483,7 @@ class TestCommandBuilderResumeCommands:
     def test_fresh_repeats_the_task_prompt_with_the_note(self):
         task = self._task()
 
-        fresh = CommandBuilder().build_fresh_task_command(task, note="Use the staging cluster")
+        fresh = CommandBuilder().with_supervisor_message(task, note="Use the staging cluster")
 
         assert fresh.label == "task"
         assert fresh.session_id is None
@@ -493,10 +493,10 @@ class TestCommandBuilderResumeCommands:
     def test_fresh_without_note_is_the_task_command(self):
         task = self._task()
 
-        assert CommandBuilder().build_fresh_task_command(task, note=None) == task
+        assert CommandBuilder().with_supervisor_message(task, note=None) == task
 
     def test_mock_commands(self):
         mock = ClaudeCodeCommand(cwd="/c", mock_command=["/mock", "Task 1.1"], label="task")
 
         assert CommandBuilder().build_resume_command(mock, "s-1", note="n").mock_command == ["/mock", "resume-s-1"]
-        assert CommandBuilder().build_fresh_task_command(mock, note="n").mock_command == ["/mock", "Task 1.1"]
+        assert CommandBuilder().with_supervisor_message(mock, note="n").mock_command == ["/mock", "Task 1.1"]

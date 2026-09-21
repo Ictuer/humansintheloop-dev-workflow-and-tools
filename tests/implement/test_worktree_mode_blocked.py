@@ -176,3 +176,28 @@ class TestOnFailureExitIsUnchanged:
 
             assert exit_info.value.code == 1
             assert "blocked" not in run.supervisor.names()
+
+
+@pytest.mark.unit
+class TestBlockOnPushFailure:
+
+    def test_push_failure_blocks_then_resume_pushes_again(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run = _Run(tmpdir, [_result(SUCCESS)], [ResumeRequest()], completes_on_call=1)
+            outcomes = iter([False, True])
+            run.repo.push = lambda: (run.repo.calls.append(("push",)) or next(outcomes))
+
+            run.mode.execute()
+
+            blocked = run.supervisor.first("blocked")
+            assert blocked["kind"] == "push" and blocked["reason"] == "push_failed"
+            assert run.repo.calls.count(("push",)) == 2
+            assert run.supervisor.events[-1]["status"] == "completed"
+
+    def test_push_failure_with_exit_still_exits(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run = _Run(tmpdir, [_result(SUCCESS)], [], completes_on_call=1, on_failure="exit")
+            run.repo.push = lambda: False
+
+            with pytest.raises(SystemExit):
+                run.mode.execute()

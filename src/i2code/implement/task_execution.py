@@ -122,7 +122,7 @@ class TaskExecution:
     def _resume_command(self, claude_cmd, failure: TaskFailure, resume: ResumeRequest) -> ClaudeCodeCommand:
         session_id = failure.result.session_id
         if resume.fresh or session_id is None:
-            return CommandBuilder().build_fresh_task_command(claude_cmd, resume.note)
+            return CommandBuilder().with_supervisor_message(claude_cmd, resume.note)
         return CommandBuilder().build_resume_command(claude_cmd, session_id, resume.note)
 
     def _run_with_nudges(self, claude_cmd: ClaudeCodeCommand) -> ClaudeResult:

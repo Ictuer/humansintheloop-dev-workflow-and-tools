@@ -72,6 +72,7 @@ class TestAssembleImplementJournal:
         assert supervisor._journal is journal
         assert supervisor._inbox.paths == RunPaths.for_idea(Repo(tmp_path), "demo")
         assert mode._loop_steps.ci_monitor._supervisor is supervisor
+        assert mode._loop_steps.build_fixer._supervisor is supervisor
 
     def test_runner_takes_notes_from_the_idea_inbox(self, idea_dir, tmp_path):
         command = assemble_implement(ImplementOpts(idea_directory=str(idea_dir), non_interactive=True))

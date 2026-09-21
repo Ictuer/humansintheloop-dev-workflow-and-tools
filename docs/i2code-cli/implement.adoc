@@ -38,7 +38,7 @@ Extra arguments appended to every `claude` invocation (task, CI fix, review, rec
 Flags that i2code sets itself (`-p`, `--print`, `--output-format`, `--resume`, `--session-id`, `--allowedTools`) are rejected.
 
 `--on-failure exit|wait`::
-What a worktree-mode run does when a task fails (default `exit`, the previous behaviour).
+What a worktree-mode run does when a task fails, CI-fix retries run out, or a push fails (default `exit`, the previous behaviour).
 With `wait` the run becomes _blocked_ instead of exiting: it records why in its journal, prints the `i2code ctl` commands to use, and waits for `i2code ctl resume` (continue the blocked Claude session, or `--fresh` for a new one, optionally with `--note`) or `i2code ctl stop`.
 An explicit `<FAILURE>` blocks at once instead of being retried in a new session.
 See link:ctl.adoc[`i2code ctl`]. Cannot be combined with `--trunk` or `--isolate`.

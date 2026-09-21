@@ -41,6 +41,7 @@ def assemble_implement(opts):
     build_fixer_factory = GithubActionsBuildFixerFactory(
         opts=opts,
         claude_runner=claude_runner,
+        supervisor=supervisor,
     )
     mode_factory = ModeFactory(
         opts=opts,

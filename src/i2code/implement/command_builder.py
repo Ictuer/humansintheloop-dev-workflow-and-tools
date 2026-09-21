@@ -59,8 +59,8 @@ class CommandBuilder:
             label="resume",
         )
 
-    def build_fresh_task_command(self, original: ClaudeCodeCommand, note: Optional[str]) -> ClaudeCodeCommand:
-        """Start the task again in a new session, with the supervisor's note after the task prompt."""
+    def with_supervisor_message(self, original: ClaudeCodeCommand, note: Optional[str]) -> ClaudeCodeCommand:
+        """Append the supervisor's message to a command's prompt (a fresh task session, the next CI fix)."""
         if note is None or original.mock_command is not None:
             return original
         return replace(original, prompt=f"{original.prompt}\n\nMessage from the supervising session:\n{note}")

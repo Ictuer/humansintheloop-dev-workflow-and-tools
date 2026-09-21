@@ -182,16 +182,16 @@ Lets a supervising session steer and unblock a running implement instead of kill
     - [x] Add on_failure to CLI and ImplementOpts with validation, and route task failures through the supervisor
     - [x] Write failing CliRunner tests for ctl resume (blocked, not blocked, dead) and implement it
 
-- [ ] **Task 3.4: CI-fix exhaustion and push failure also block with --on-failure=wait**
+- [x] **Task 3.4: CI-fix exhaustion and push failure also block with --on-failure=wait**
   - TaskType: OUTCOME
   - Entrypoint: `i2code implement <idea-dir> --non-interactive --on-failure wait`
   - Observable: When CI-fix retries are exhausted the run blocks with kind ci_fix and resume runs the fix loop again with a fresh budget; when a push fails the run blocks with kind push and resume pushes again; with --on-failure exit both still call sys.exit(1)
   - Evidence: `uv run python -m pytest tests/implement/test_github_actions_build_fixer.py tests/implement/test_worktree_mode_blocked.py -m unit`
   - Steps:
-    - [ ] Write failing build fixer tests for block-then-resume and for the unchanged exit path
-    - [ ] Give GithubActionsBuildFixer the supervisor through its factory and block instead of exiting when waiting is enabled
-    - [ ] Write failing WorktreeMode tests for push failure block-then-resume
-    - [ ] Route push failures through the supervisor
+    - [x] Write failing build fixer tests for block-then-resume and for the unchanged exit path
+    - [x] Give GithubActionsBuildFixer the supervisor through its factory and block instead of exiting when waiting is enabled
+    - [x] Write failing WorktreeMode tests for push failure block-then-resume
+    - [x] Route push failures through the supervisor
 
 - [ ] **Task 3.5: i2code ctl stop ends the run gracefully at the next checkpoint**
   - TaskType: OUTCOME
@@ -285,3 +285,6 @@ build_nudge_command + outcome_nudge.j2; WorktreeMode nudges missing-tag sessions
 
 ### 2026-09-21 22:28 - mark-task-complete
 RunSupervisor block/resume/stop, TaskExecution (extracted) blocks on failure_tag/missing_tag/attempts_exhausted, resume continue/fresh, ctl resume, --on-failure CLI + trunk/isolate rejection; unit 1620 passed, pyright 0
+
+### 2026-09-21 22:30 - mark-task-complete
+Build fixer blocks ci_fix/ci_retries_exhausted and reruns fix loop with note; push failure blocks push/push_failed and retries; exit mode unchanged; factory+assembler wiring tested; unit 1625 passed
