@@ -20,7 +20,7 @@ class TestSetupWorktree:
         )
         ProjectSetup().setup_worktree(git_repo)
 
-        mock_settings.assert_called_once_with("/worktree", "/main")
+        mock_settings.assert_called_once_with("/worktree", "/main", allow_push=False)
 
     @patch("i2code.implement.worktree_setup._run_setup_project_script")
     @patch("i2code.implement.worktree_setup.setup_claude_settings_local_json")
@@ -50,5 +50,19 @@ class TestSetupClone:
         git_repo = FakeGitRepository(working_tree_dir="/clone", main_repo_dir="/clone")
         ProjectSetup().setup_clone(git_repo)
 
-        mock_settings.assert_called_once_with("/clone", "/clone")
+        mock_settings.assert_called_once_with("/clone", "/clone", allow_push=False)
         mock_script.assert_called_once_with("/clone")
+
+
+@pytest.mark.unit
+class TestSetupAllowPush:
+    """ProjectSetup(allow_push=True) passes the flag to the settings setup."""
+
+    @patch("i2code.implement.worktree_setup._run_setup_project_script")
+    @patch("i2code.implement.worktree_setup.setup_claude_settings_local_json")
+    def test_passes_allow_push(self, mock_settings, mock_script):
+        git_repo = FakeGitRepository(working_tree_dir="/worktree", main_repo_dir="/main")
+
+        ProjectSetup(allow_push=True).setup_worktree(git_repo)
+
+        mock_settings.assert_called_once_with("/worktree", "/main", allow_push=True)

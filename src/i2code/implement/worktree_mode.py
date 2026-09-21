@@ -214,6 +214,7 @@ class WorktreeMode:
                 interactive=not self._opts.non_interactive,
                 extra_prompt=self._opts.extra_prompt,
                 extra_cli_args=extra_cli_args,
+                allow_push=self._opts.allow_push,
             ),
             cwd=cwd,
         )

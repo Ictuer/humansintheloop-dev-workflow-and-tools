@@ -162,3 +162,10 @@ class TestClaudeArgs:
         flags = ImplementOpts(idea_directory="/tmp", claude_args="--effort high").inner_cli_flags()
         idx = flags.index("--claude-args")
         assert flags[idx + 1] == "--effort high"
+
+
+@pytest.mark.unit
+class TestAllowPushForwarding:
+
+    def test_allow_push_forwarded_to_inner_command(self):
+        assert "--allow-push" in ImplementOpts(idea_directory="/tmp", allow_push=True).inner_cli_flags()

@@ -68,17 +68,17 @@ Lets callers drop the `claude` wrapper on PATH, the `I2CODE_ALLOW_CLAUDE_PUSH` v
     - [x] Add `claude_args` to `ImplementOpts`, validate it, and pass the split list to `ClaudeRunner` in `assemble_implement`
     - [x] Document the option in `docs/i2code-cli/implement.adoc`
 
-- [ ] **Task 1.3: `--allow-push` lets Claude push the idea branch mid-task**
+- [x] **Task 1.3: `--allow-push` lets Claude push the idea branch mid-task**
   - TaskType: OUTCOME
   - Entrypoint: `i2code implement <idea-dir> --non-interactive --allow-push`
   - Observable: The worktree `.claude/settings.local.json` has no `Bash(git push:*)` deny rule (an existing one is removed); the task prompt allows pushing the current branch without `--force` instead of forbidding pushes; without the flag both stay as today; `I2CODE_ALLOW_CLAUDE_PUSH` no longer has any effect
   - Evidence: `uv run python -m pytest tests/claude tests/implement/test_command_builder.py tests/implement/test_worktree_setup.py -m unit`
   - Steps:
-    - [ ] Write failing tests for `ensure_claude_permissions(repo_root, allow_push=True)` (no deny rule added, existing one removed) and for the default (deny rule present)
-    - [ ] Replace the environment-variable check with an `allow_push` parameter threaded through `setup_claude_settings_local_json` and `ProjectSetup`
-    - [ ] Write failing template tests: `task_execution.j2` renders the push permission line when `allow_push` is set and the current line otherwise
-    - [ ] Add `allow_push` to `TaskCommandOpts` and the template; pass it from `WorktreeMode._build_command`
-    - [ ] Add `--allow-push` to the CLI, `ImplementOpts` and inner-command forwarding; document it
+    - [x] Write failing tests for `ensure_claude_permissions(repo_root, allow_push=True)` (no deny rule added, existing one removed) and for the default (deny rule present)
+    - [x] Replace the environment-variable check with an `allow_push` parameter threaded through `setup_claude_settings_local_json` and `ProjectSetup`
+    - [x] Write failing template tests: `task_execution.j2` renders the push permission line when `allow_push` is set and the current line otherwise
+    - [x] Add `allow_push` to `TaskCommandOpts` and the template; pass it from `WorktreeMode._build_command`
+    - [x] Add `--allow-push` to the CLI, `ImplementOpts` and inner-command forwarding; document it
 
 ---
 
@@ -245,3 +245,6 @@ test_cli_extra_prompt_file.py: file content → extra_prompt, both options → u
 
 ### 2026-09-21 21:51 - mark-task-complete
 ClaudeRunner global_args + ImplementOpts.claude_args (shlex, owned-flag rejection, forwarded) + CLI + assembler wiring test; unit suite 1485 passed
+
+### 2026-09-21 21:54 - mark-task-complete
+allow_push threaded CLI→opts→ProjectSetup→permissions (deny rule removed) and TaskCommandOpts→task_execution.j2; env var removed; default prompt byte-identical; unit suite 1497 passed

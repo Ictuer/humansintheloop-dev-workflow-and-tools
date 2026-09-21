@@ -90,8 +90,11 @@ def _without_path_scoped_write_rules(permissions: List[str]) -> List[str]:
     return [perm for perm in permissions if not _is_path_scoped_write_rule(perm)]
 
 
-def ensure_claude_permissions(repo_root: str) -> None:
-    """Ensure .claude/settings.local.json has required permissions."""
+def ensure_claude_permissions(repo_root: str, allow_push: bool = False) -> None:
+    """Ensure .claude/settings.local.json has required permissions.
+
+    With allow_push, Claude may push its own branch, so the git push deny rule is removed instead of added.
+    """
     settings_dir = os.path.join(repo_root, ".claude")
     settings_file = os.path.join(settings_dir, "settings.local.json")
 
@@ -105,19 +108,22 @@ def ensure_claude_permissions(repo_root: str) -> None:
     permissions = config.setdefault("permissions", {})
     existing_allow = _without_path_scoped_write_rules(permissions.get("allow", []))
     permissions["allow"] = _merge_permissions(existing_allow, calculate_claude_permissions(repo_root))
-    # I2CODE_ALLOW_CLAUDE_PUSH=1: caller lets Claude push its own branch (e.g. to trigger workflow_dispatch on a fresh
-    # commit mid-task in non-interactive mode); otherwise Claude never pushes — the caller does.
-    denied = [] if os.environ.get("I2CODE_ALLOW_CLAUDE_PUSH") == "1" else DENIED_PERMISSIONS
-    permissions["deny"] = _merge_permissions(permissions.get("deny", []), denied)
+    permissions["deny"] = _deny_rules(permissions.get("deny", []), allow_push)
     with open(settings_file, "w") as f:
         json.dump(config, f, indent=2)
         f.write("\n")
 
 
-def setup_claude_settings_local_json(dest_root, source_root=None):
+def _deny_rules(existing: List[str], allow_push: bool) -> List[str]:
+    if allow_push:
+        return [perm for perm in existing if perm not in DENIED_PERMISSIONS]
+    return _merge_permissions(existing, DENIED_PERMISSIONS)
+
+
+def setup_claude_settings_local_json(dest_root, source_root=None, allow_push=False):
     """Copy settings.local.json from source (if provided) and ensure Claude permissions."""
     copy_source_settings(dest_root, source_root)
-    ensure_claude_permissions(dest_root)
+    ensure_claude_permissions(dest_root, allow_push=allow_push)
 
 
 def copy_source_settings(dest_root, source_root=None):

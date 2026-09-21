@@ -80,13 +80,13 @@ class ImplementCommand:
 
         if self.opts.isolated:
             print_message(f"Worktree: {self.git_repo.working_tree_dir}")
-            ProjectSetup().setup_worktree(self.git_repo)
+            ProjectSetup(allow_push=self.opts.allow_push).setup_worktree(self.git_repo)
             work_project = self.project
         else:
             with timed("ensure_worktree"):
                 self.git_repo = self.git_repo.ensure_worktree(self.project.name, idea_branch)
             print_message(f"Worktree: {self.git_repo.working_tree_dir}")
-            ProjectSetup().setup_worktree(self.git_repo)
+            ProjectSetup(allow_push=self.opts.allow_push).setup_worktree(self.git_repo)
             work_project = self.project.worktree_idea_project(
                 self.git_repo.working_tree_dir, self.git_repo.main_repo_dir
             )

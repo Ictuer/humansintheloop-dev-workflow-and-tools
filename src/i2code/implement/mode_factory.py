@@ -56,7 +56,7 @@ class ModeFactory:
         workspace = Workspace(git_repo=git_repo, project=project)
         worktree_setup = WorktreeSetupDeps(
             scaffolder_factory=scaffolder_factory,
-            project_setup=ProjectSetup(),
+            project_setup=ProjectSetup(allow_push=opts.allow_push),
         )
         return IsolateMode(
             workspace=workspace,

@@ -8,6 +8,7 @@ from i2code.claude.permissions import (
     calculate_claude_permissions,
     copy_source_settings,
     ensure_claude_permissions,
+    setup_claude_settings_local_json,
     REQUIRED_PERMISSIONS,
 )
 
@@ -118,3 +119,52 @@ class TestEnsureClaudePermissions:
         ensure_claude_permissions(dest_root)
 
         assert "Write" in _read_allow_rules(dest_settings)
+
+
+def _read_deny_rules(path):
+    with open(path, "r") as f:
+        return json.load(f)["permissions"].get("deny", [])
+
+
+@pytest.mark.unit
+class TestAllowPush:
+    """allow_push controls the git push deny rule in the worktree settings."""
+
+    def test_default_denies_git_push(self, settings_paths):
+        _, dest_root, _, dest_settings = settings_paths
+
+        ensure_claude_permissions(dest_root)
+
+        assert "Bash(git push:*)" in _read_deny_rules(dest_settings)
+
+    def test_allow_push_adds_no_deny_rule(self, settings_paths):
+        _, dest_root, _, dest_settings = settings_paths
+
+        ensure_claude_permissions(dest_root, allow_push=True)
+
+        assert "Bash(git push:*)" not in _read_deny_rules(dest_settings)
+
+    def test_allow_push_removes_existing_deny_rule(self, settings_paths):
+        _, dest_root, _, dest_settings = settings_paths
+        _write_settings(dest_settings, json.dumps(
+            {"permissions": {"allow": [], "deny": ["Bash(git push:*)", "Bash(rm:*)"]}}
+        ))
+
+        ensure_claude_permissions(dest_root, allow_push=True)
+
+        assert _read_deny_rules(dest_settings) == ["Bash(rm:*)"]
+
+    def test_environment_variable_has_no_effect(self, settings_paths, monkeypatch):
+        _, dest_root, _, dest_settings = settings_paths
+        monkeypatch.setenv("I2CODE_ALLOW_CLAUDE_PUSH", "1")
+
+        ensure_claude_permissions(dest_root)
+
+        assert "Bash(git push:*)" in _read_deny_rules(dest_settings)
+
+    def test_setup_passes_allow_push(self, settings_paths):
+        source_root, dest_root, _, dest_settings = settings_paths
+
+        setup_claude_settings_local_json(dest_root, source_root, allow_push=True)
+
+        assert "Bash(git push:*)" not in _read_deny_rules(dest_settings)

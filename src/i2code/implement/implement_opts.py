@@ -34,6 +34,7 @@ class ImplementOpts:
     skip_scaffolding: bool = False
     debug_claude: bool = False
     claude_args: str | None = None
+    allow_push: bool = False
 
     _INNER_FORWARDED = {
         "cleanup",
@@ -47,6 +48,7 @@ class ImplementOpts:
         "ci_fix_retries",
         "ci_timeout",
         "claude_args",
+        "allow_push",
     }
 
     _INNER_IGNORED = {

@@ -775,3 +775,30 @@ class TestReviewPollLoopCiFix:
 
             captured = capsys.readouterr()
             assert "merged" in captured.out.lower()
+
+
+@pytest.mark.unit
+class TestWorktreeModeAllowPush:
+    """--allow-push reaches the task prompt."""
+
+    @pytest.mark.parametrize("allow_push,expected", [
+        (True, "You may push the current branch to origin"),
+        (False, "Do not push to the remote repository"),
+    ])
+    def test_task_prompt_reflects_allow_push(self, allow_push, expected):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            plan_path, idea_dir, fake_repo, fake_runner = _setup_task_with_success(tmpdir)
+            fake_runner.set_result(ClaudeResult(
+                returncode=0,
+                output=CapturedOutput("<SUCCESS>task implemented: bbb</SUCCESS>"),
+            ))
+            opts = ImplementOpts(
+                idea_directory=idea_dir, non_interactive=True, skip_ci_wait=True, allow_push=allow_push,
+            )
+            mode, _, fake_runner, _, _ = _make_worktree_mode(
+                plan_path, idea_dir, tmpdir, fake_repo=fake_repo, fake_runner=fake_runner, opts=opts,
+            )
+            mode.execute()
+
+            _, cmd, _ = fake_runner.calls[0]
+            assert expected in cmd.prompt

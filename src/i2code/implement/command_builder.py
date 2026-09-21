@@ -13,6 +13,7 @@ class TaskCommandOpts:
     interactive: bool = True
     extra_prompt: Optional[str] = None
     extra_cli_args: Optional[List[str]] = None
+    allow_push: bool = False
 
 
 @dataclass
@@ -64,6 +65,7 @@ class CommandBuilder:
             task_description=task_description,
             extra_prompt=opts.extra_prompt,
             interactive=opts.interactive,
+            allow_push=opts.allow_push,
         )
 
         allowed_tools, add_dirs, extra_args = self._split_extra_cli_args(

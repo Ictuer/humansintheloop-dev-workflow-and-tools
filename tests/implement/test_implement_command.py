@@ -243,7 +243,7 @@ class TestAddressReviewCommentsNoPR:
         )
         monkeypatch.setattr(
             "i2code.implement.implement_command.ProjectSetup",
-            lambda: MagicMock(),
+            lambda **kwargs: MagicMock(),
         )
 
         cmd, project, git_repo = _make_command(
@@ -300,6 +300,15 @@ class TestImplementCommandWorktreeMode:
         git_repo.ensure_worktree.return_value = mock_wt_git_repo
         git_repo.gh_client.find_pr.return_value = None
         return cmd, project, git_repo, mock_wt_git_repo
+
+    @patch("i2code.implement.implement_command.WorkflowState.load")
+    @patch("i2code.implement.implement_command.ProjectSetup")
+    def test_project_setup_receives_allow_push(self, mock_setup, mock_load_state):
+        cmd, _, _, mock_wt_git_repo = self._setup_worktree_command()
+        cmd.opts.allow_push = True
+        cmd.execute()
+        mock_setup.assert_called_once_with(allow_push=True)
+        mock_setup.return_value.setup_worktree.assert_called_once_with(mock_wt_git_repo)
 
     @patch("i2code.implement.implement_command.WorkflowState.load")
     @patch("i2code.implement.implement_command.ProjectSetup")
@@ -435,7 +444,7 @@ class TestDeferredPRCreation:
         )
         monkeypatch.setattr(
             "i2code.implement.implement_command.ProjectSetup",
-            lambda: MagicMock(),
+            lambda **kwargs: MagicMock(),
         )
 
         cmd, _project, git_repo = _make_command(

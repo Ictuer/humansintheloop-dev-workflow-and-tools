@@ -383,3 +383,19 @@ class TestFeedbackTemplate:
     def test_feedback_template_has_feedback_type_placeholder(self):
         """Template should have placeholder for feedback type."""
         assert 'FEEDBACK_TYPE' in _read_feedback_template(), "Template should have FEEDBACK_TYPE placeholder"
+
+
+@pytest.mark.unit
+class TestCommandBuilderTaskCommandAllowPush:
+    """TaskCommandOpts.allow_push switches the push instruction in the task prompt."""
+
+    def test_default_forbids_push(self):
+        cmd = _build_task_cmd()
+        assert "Do not push to the remote repository - the caller handles pushing." in cmd.prompt
+        assert "You may push the current branch" not in cmd.prompt
+
+    def test_allow_push_permits_pushing_current_branch(self):
+        cmd = _build_task_cmd(opts=TaskCommandOpts(allow_push=True))
+        assert "Do not push to the remote repository" not in cmd.prompt
+        assert "You may push the current branch to origin" in cmd.prompt
+        assert "never with --force" in cmd.prompt

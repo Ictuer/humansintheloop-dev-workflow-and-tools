@@ -37,6 +37,10 @@ Read the extra prompt text from a UTF-8 file. Cannot be combined with `--extra-p
 Extra arguments appended to every `claude` invocation (task, CI fix, review, recovery), split like a shell, for example `--claude-args "--effort high"`.
 Flags that i2code sets itself (`-p`, `--print`, `--output-format`, `--resume`, `--session-id`, `--allowedTools`) are rejected.
 
+`--allow-push`::
+Let Claude push the idea branch to `origin` during a task (never with `--force`, never another branch), for tasks that need CI to run on a new commit before they can finish.
+The worktree's `.claude/settings.local.json` gets no `Bash(git push:*)` deny rule, and the task prompt allows the push. i2code still pushes after each task.
+
 `--trunk`::
 Execute tasks locally on the current branch (no worktree, PR, or CI).
 

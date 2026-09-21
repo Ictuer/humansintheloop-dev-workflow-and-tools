@@ -54,6 +54,8 @@ from i2code.implement.scaffold_opts import ScaffoldOpts
               help="Skip project scaffolding step")
 @click.option("--debug-claude", is_flag=True,
               help="Show full Claude output instead of progress dots")
+@click.option("--allow-push", is_flag=True,
+              help="Let Claude push the idea branch mid-task (never --force); i2code still pushes after each task")
 @click.option("--claude-args", metavar="TEXT",
               help="Extra arguments for every Claude invocation, split like a shell (e.g. \"--effort high\")")
 @click.pass_context

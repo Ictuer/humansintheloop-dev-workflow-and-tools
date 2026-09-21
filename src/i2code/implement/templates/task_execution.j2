@@ -12,7 +12,11 @@ Follow the active TDD and plan-tracking skills:
 
 Do not work on future tasks until the current one is complete.
 If all tasks are complete, stop and report success.
+{% if allow_push -%}
+You may push the current branch to origin, never with --force and never another branch, when the task needs CI to run on a new commit before it can be completed. The caller still pushes after the task.
+{% else -%}
 Do not push to the remote repository - the caller handles pushing.
+{% endif -%}
 {% if extra_prompt %}
 
 {{ extra_prompt }}

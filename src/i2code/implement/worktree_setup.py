@@ -9,6 +9,9 @@ from i2code.claude.permissions import setup_claude_settings_local_json
 class ProjectSetup:
     """Handles project setup for worktrees and clones."""
 
+    def __init__(self, allow_push=False):
+        self._allow_push = allow_push
+
     def setup_worktree(self, git_repo):
         """Set up a worktree project — skips if not a worktree."""
         if not git_repo.is_worktree:
@@ -20,7 +23,9 @@ class ProjectSetup:
         self._setup(git_repo)
 
     def _setup(self, git_repo):
-        setup_claude_settings_local_json(git_repo.working_tree_dir, git_repo.main_repo_dir)
+        setup_claude_settings_local_json(
+            git_repo.working_tree_dir, git_repo.main_repo_dir, allow_push=self._allow_push,
+        )
         _run_setup_project_script(git_repo.working_tree_dir)
 
 
