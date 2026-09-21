@@ -128,17 +128,17 @@ Makes a running implement observable: every Claude invocation and lifecycle step
     - [x] Make GithubActionsMonitor report the CI result so ci_finished can carry success and failing_workflow
     - [x] Write failing tests for run_finished on normal completion and on SystemExit, then wrap execute accordingly
 
-- [ ] **Task 2.5: i2code ctl status and events show the run to a supervisor**
+- [x] **Task 2.5: i2code ctl status and events show the run to a supervisor**
   - TaskType: OUTCOME
   - Entrypoint: `i2code ctl status <idea> [--json]; i2code ctl events <idea> [--limit N] [--follow]`
-  - Observable: status prints state, pid liveness, current task and Claude invocation, block reason with resume hint, queued note count and the events path; --json prints status.json plus alive and queued_notes; a dead pid with a non-final state shows as dead; events prints the last N events and --follow streams new ones
-  - Evidence: `uv run python -m pytest tests/ctl -m unit`
+  - Observable: status prints state, pid liveness, current task and Claude invocation, block reason with resume hint and the events path; --json prints status.json plus alive and events_file; a dead pid with a non-final state shows as dead; no journal prints 'no run recorded'; events prints the last N events and --follow streams new ones until run_finished
+  - Evidence: `uv run python -m pytest tests/ctl-cmd -m unit`
   - Steps:
-    - [ ] Write failing CliRunner tests for status (running, blocked, dead, no run yet) and --json
-    - [ ] Add the ctl Click group, register it in i2code/cli.py, and implement status
-    - [ ] Write failing tests for events --limit and for --follow with an injected sleep and stop condition
-    - [ ] Implement events
-    - [ ] Add docs/i2code-cli/ctl.adoc and link it from i2code-cli.adoc and README.adoc
+    - [x] Write failing CliRunner tests for status (running, blocked, dead, no run yet) and --json
+    - [x] Add the ctl Click group in src/i2code/ctl_cmd, register it in i2code/cli.py, and implement status
+    - [x] Write failing tests for events --limit and for --follow with an injected sleep, ending at run_finished
+    - [x] Implement events
+    - [x] Add docs/i2code-cli/ctl.adoc and link it from i2code-cli.adoc and README.adoc
 
 ---
 
@@ -148,13 +148,13 @@ Lets a supervising session steer and unblock a running implement instead of kill
 - [ ] **Task 3.1: i2code ctl note steers the next Claude invocation**
   - TaskType: OUTCOME
   - Entrypoint: `i2code ctl note <idea> "text"`
-  - Observable: The note is stored in inbox/; the next Claude invocation labelled task, ci_fix, fix_feedback, nudge or resume gets the notes appended under 'Notes from the supervising session (oldest first):', the inbox notes are deleted, and note_delivered is journaled; other labels never receive notes
-  - Evidence: `uv run python -m pytest tests/implement/test_inbox.py tests/implement/test_supervised_claude_runner.py tests/ctl -m unit`
+  - Observable: The note is stored in inbox/; ctl status shows the queued note count; the next Claude invocation labelled task, ci_fix, fix_feedback, nudge or resume gets the notes appended under 'Notes from the supervising session (oldest first):', the inbox notes are deleted, and note_delivered is journaled; other labels and mock commands never receive notes
+  - Evidence: `uv run python -m pytest tests/supervision/test_inbox.py tests/supervision/test_supervised_claude_runner.py tests/ctl-cmd -m unit`
   - Steps:
     - [ ] Write failing Inbox tests: atomic write, ordered read by kind, delete after drain, notes kept when other kinds are drained
-    - [ ] Implement Inbox
-    - [ ] Write failing CliRunner test for ctl note, including when nothing is running
-    - [ ] Implement ctl note
+    - [ ] Implement Inbox in src/i2code/supervision
+    - [ ] Write failing CliRunner tests for ctl note (including when nothing is running) and the queued note count in ctl status
+    - [ ] Implement ctl note and the count
     - [ ] Write failing SupervisedClaudeRunner tests for note injection by label and mock commands untouched
     - [ ] Implement note injection and the note_delivered event
 
@@ -267,3 +267,12 @@ Labels on all CommandBuilder commands + task/ci_fix mocks, ClaudeResult.outcome,
 
 ### 2026-09-21 22:05 - mark-task-complete
 test_worktree_mode_journal: lifecycle order, fields, skipped CI, SystemExit→run_finished failed; supervisor wired via ModeFactory (assembler test); unit suite 1542 passed
+
+### 2026-09-21 22:05 - replace-task
+ctl_cmd package per catalog; queued-note count moves to 3.1 where the inbox exists; --follow ends at run_finished
+
+### 2026-09-21 22:05 - replace-task
+Supervision/ctl-cmd test locations; queued-note count moved here from 2.5
+
+### 2026-09-21 22:07 - mark-task-complete
+tests/ctl-cmd/test_ctl_cli.py: status running/blocked/dead/finished/none/--json/path, events --limit/--follow; docs ctl.adoc linked; unit suite 1552 passed; real CLI smoke ok

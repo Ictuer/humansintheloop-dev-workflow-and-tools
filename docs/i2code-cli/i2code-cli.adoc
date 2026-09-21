@@ -49,6 +49,10 @@ idea brainstorm
 | Execute an implementation plan
 | link:implement.adoc[implement]
 
+| `i2code ctl status\|events <idea>`
+| Observe a running implement
+| link:ctl.adoc[ctl]
+
 | `i2code improve ...`
 | Analyze sessions, review issues, update configuration
 | link:improve.adoc[improve]

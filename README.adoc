@@ -90,6 +90,9 @@ The CLI is organized into the following command groups (see link:./docs/i2code-c
 | link:./docs/i2code-cli/implement.adoc[`i2code implement <dir>`]
 | Execute an implementation plan
 
+| link:./docs/i2code-cli/ctl.adoc[`i2code ctl ...`]
+| Observe and steer a running `implement`
+
 | link:./docs/i2code-cli/improve.adoc[`i2code improve ...`]
 | Analyze sessions, review issues, update configuration
 
