@@ -38,6 +38,11 @@ The command selects one of three execution modes based on flags. Mode instances 
 | `--isolation-type TYPE` | Isolation environment type (passed as `--type` to isolarium, implies `--isolate`) |
 | `--mock-claude SCRIPT` | Use mock script instead of Claude (for testing) |
 | `--extra-prompt TEXT` | Extra text to append to Claude's prompt |
+| `--extra-prompt-file PATH` | Read the extra prompt from a file |
+| `--claude-args TEXT` | Extra arguments for every `claude` invocation (e.g. `--effort high`) |
+| `--allow-push` | Let Claude push the idea branch mid-task |
+| `--nudge-missing-tag N` | Resume a session that ended without an outcome tag, up to N times |
+| `--on-failure exit\|wait` | Exit (default) or block and wait for `i2code ctl resume\|stop` |
 | `--skip-ci-wait` | Skip waiting for CI after push (for testing) |
 
 ## 3. Trunk Mode (`--trunk`)
@@ -119,7 +124,7 @@ Each Claude task invocation is validated against these criteria (see [`claude_ru
 |---|-------|------------|------------|
 | 1 | Exit code is 0 | Retry (up to 3 attempts) | All modes |
 | 2 | HEAD advanced (a commit was made) | Retry (up to 3 attempts) | All modes |
-| 3 | `<SUCCESS>` tag present in stdout | Hard exit (`sys.exit(1)`) | Non-interactive only |
+| 3 | `<SUCCESS>` tag present in stdout | Hard exit (`sys.exit(1)`), or block with `--on-failure wait` | Non-interactive only |
 | 4 | Task marked complete in plan file | Retry (up to 3 attempts) | All modes |
 | 5 | CI workflow file exists in `.github/workflows/` | Retry (up to 3 attempts) | Worktree mode only |
 
@@ -130,6 +135,30 @@ The `task_execution.j2` prompt template instructs Claude to output one of:
 - `<FAILURE>Explanation of failure</FAILURE>` — on failure
 
 In non-interactive mode (`--non-interactive`), Claude's stdout is captured via `--output-format=stream-json`. The `<SUCCESS>` tag is checked as an additional confidence signal. In interactive mode, stdout is not captured (it drives the TUI), so this check is skipped.
+
+### Nudges and blocking
+
+Task attempts, nudges and validation live in [`task_execution.py`](../../src/i2code/implement/task_execution.py).
+
+- With `--nudge-missing-tag N`, a non-interactive invocation that exits 0 without `<SUCCESS>` or `<FAILURE>` is resumed
+  (`claude --resume <session id>`, prompt `outcome_nudge.j2`) up to N times before the result is judged.
+- With `--on-failure wait`, the hard exits become a _blocked_ state: an explicit `<FAILURE>` (at once, without fresh
+  retries), a missing tag after the nudges, exhausted attempts, exhausted CI-fix retries and a failed push. The run
+  waits for `i2code ctl resume` (continue the session with `supervisor_resume.j2`, or `--fresh`) or `i2code ctl stop`.
+
+## Run Journal and Supervision
+
+Worktree mode records the run in `<git common dir>/i2code/implement/<idea>/` (package
+[`i2code.supervision`](../../src/i2code/supervision/)):
+
+- `events.jsonl` — `RunJournal` appends one event per line: run, task, Claude invocation (with label, outcome tag,
+  session id, turns, cost, duration), push, CI, blocked/resumed, stop, run finished.
+- `status.json` — `fold_status` of all events, rewritten atomically after each one.
+- `inbox/` — `Inbox`, a file queue written by `i2code ctl` (`note`, `resume`, `stop`) and read by the run.
+
+`SupervisedClaudeRunner` wraps the Claude runner to journal every invocation and append queued notes to steerable
+prompts; `RunSupervisor` records events, blocks, and honours stop requests at checkpoints (top of the task loop,
+review poll loop, while blocked). See [`i2code ctl`](../i2code-cli/ctl.adoc).
 
 ## Commit Recovery
 
@@ -158,3 +187,6 @@ On startup (before the task loop), both trunk and worktree modes check for uncom
 | [`pull_request_review_processor.py`](../../src/i2code/implement/pull_request_review_processor.py) | Processes PR review feedback via triage |
 | [`github_actions_monitor.py`](../../src/i2code/implement/github_actions_monitor.py) | Waits for CI completion and reports results |
 | [`idea_project.py`](../../src/i2code/implement/idea_project.py) | Idea directory, plan file, and task state |
+| [`task_execution.py`](../../src/i2code/implement/task_execution.py) | Task attempts, nudges, validation, blocking |
+| [`supervision/`](../../src/i2code/supervision/) | Run journal, inbox, supervisor, journaling Claude runner |
+| [`ctl_cmd/cli.py`](../../src/i2code/ctl_cmd/cli.py) | `i2code ctl status\|events\|note\|resume\|stop` |

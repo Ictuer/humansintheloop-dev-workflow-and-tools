@@ -219,14 +219,14 @@ Proves the control plane with a mock-Claude run and documents how a supervising 
     - [x] Write the integration test running implement as its own process (it installs signal handlers, so it must own its main thread) and ctl from the test
     - [x] Fix any gaps it exposes
 
-- [ ] **Task 4.2: Document supervising a non-interactive run**
+- [x] **Task 4.2: Document supervising a non-interactive run**
   - TaskType: INFRA
   - Entrypoint: `docs/i2code-cli/implement.adoc and docs/design/implement-steps.md`
   - Observable: implement.adoc lists every new option; implement-steps.md describes the journal, the blocked state and the success-criteria changes; a 'Supervising a run' section shows the ctl commands a supervising Claude session uses, including following events.jsonl with a monitor
   - Evidence: `uv run python -m pytest -m unit`
   - Steps:
-    - [ ] Update implement.adoc and implement-steps.md
-    - [ ] Add the 'Supervising a run' section with a worked example
+    - [x] Update implement.adoc and implement-steps.md
+    - [x] Add the 'Supervising a run' section with a worked example
 
 ---
 
@@ -297,3 +297,6 @@ implement must own its main thread (signal handlers); note delivery covered by u
 
 ### 2026-09-21 22:57 - mark-task-complete
 test_supervised_run_integration.py: block→ctl status→ctl resume→2 tasks complete; block→ctl stop→stopped exit 0; integration suite 14 passed
+
+### 2026-09-21 22:58 - mark-task-complete
+implement-steps.md: options, nudges/blocking, run journal section, key files; ctl.adoc: Supervising a run worked example; unit suite 1634 passed

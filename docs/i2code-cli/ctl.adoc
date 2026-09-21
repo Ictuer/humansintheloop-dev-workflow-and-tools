@@ -105,6 +105,33 @@ When a run starts, `resume` and `stop` requests left by an earlier run are disca
 
 Every event also has `ts` (ISO 8601 with UTC offset) and `event`.
 
+== Supervising a run
+
+A supervising session (for example an interactive Claude Code session next to an unattended run) starts the run
+with the supervision options, follows the journal, and steps in when the run blocks:
+
+[source,shell]
+----
+i2code implement docs/ideas/active/my-feature --non-interactive \
+  --on-failure wait --nudge-missing-tag 1 --allow-push \
+  --claude-args "--effort high" --extra-prompt-file prompts/unattended.md &
+
+# Wake up only on what needs attention (e.g. as a Claude Code Monitor command):
+i2code ctl events my-feature --follow | grep --line-buffered -E '"(blocked|task_completed|run_finished)"'
+----
+
+When a `blocked` event arrives:
+
+[source,shell]
+----
+i2code ctl status my-feature             # reason, detail, permission denials, session id
+# ... fix what only a human can fix (a secret, a file Claude Code may not write, ...) ...
+i2code ctl resume my-feature --note "lefthook.yml is in place now; continue from the commit step"
+----
+
+Steer without stopping: `i2code ctl note my-feature "use the staging cluster for the load test"` reaches the next
+task, CI-fix, nudge or resume prompt. End cleanly between tasks with `i2code ctl stop my-feature`.
+
 == Examples
 
 [source,shell]
