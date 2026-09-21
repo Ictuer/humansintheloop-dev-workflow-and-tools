@@ -27,11 +27,21 @@ class Supervisor(EventRecorder, Protocol):
 
     def block(self, kind: str, reason: str, **details: Any) -> ResumeRequest: ...
 
+    def raise_if_stop_requested(self) -> None: ...
+
+    def discard_stale_requests(self) -> None: ...
+
 
 class NullSupervisor:
     """Keeps today's behaviour when nothing supervises the run."""
 
     def record(self, event: str, **fields: Any) -> None:
+        return None
+
+    def raise_if_stop_requested(self) -> None:
+        return None
+
+    def discard_stale_requests(self) -> None:
         return None
 
     def block(self, kind: str, reason: str, **details: Any) -> ResumeRequest:

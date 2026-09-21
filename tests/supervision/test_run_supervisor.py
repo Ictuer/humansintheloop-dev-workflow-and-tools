@@ -92,3 +92,26 @@ class TestRunSupervisorBlock:
 
         status, _ = _events(paths)
         assert status["updated"] is not None
+
+
+@pytest.mark.unit
+class TestRunSupervisorStop:
+
+    def test_checkpoint_without_stop_request_returns(self, paths):
+        _supervisor(paths, _ScriptedSleep(), []).raise_if_stop_requested()
+
+    def test_checkpoint_with_stop_request_raises(self, paths):
+        Inbox(paths).post("stop")
+
+        with pytest.raises(RunStopped):
+            _supervisor(paths, _ScriptedSleep(), []).raise_if_stop_requested()
+
+    def test_discard_stale_requests_keeps_notes(self, paths):
+        inbox = Inbox(paths)
+        inbox.post("resume", note=None, fresh=False)
+        inbox.post("stop")
+        inbox.post("note", text="keep")
+
+        _supervisor(paths, _ScriptedSleep(), []).discard_stale_requests()
+
+        assert (inbox.count("resume"), inbox.count("stop"), inbox.count("note")) == (0, 0, 1)

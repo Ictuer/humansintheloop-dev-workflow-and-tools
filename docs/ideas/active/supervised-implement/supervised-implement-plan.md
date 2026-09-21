@@ -193,16 +193,16 @@ Lets a supervising session steer and unblock a running implement instead of kill
     - [x] Write failing WorktreeMode tests for push failure block-then-resume
     - [x] Route push failures through the supervisor
 
-- [ ] **Task 3.5: i2code ctl stop ends the run gracefully at the next checkpoint**
+- [x] **Task 3.5: i2code ctl stop ends the run gracefully at the next checkpoint**
   - TaskType: OUTCOME
   - Entrypoint: `i2code ctl stop <idea>`
   - Observable: The run honours the request at the top of the task loop, in the review poll loop and while blocked, journals stop_requested and run_finished with status stopped, and exits 0; ctl stop refuses when no live run exists; at start the run deletes resume and stop messages left from an earlier run and keeps notes
   - Evidence: `uv run python -m pytest tests/implement/test_worktree_mode_stop.py tests/ctl -m unit`
   - Steps:
-    - [ ] Write failing WorktreeMode tests for stop at each checkpoint
-    - [ ] Implement the checkpoints and the stopped exit
-    - [ ] Write failing tests for stale-message cleanup at start and implement it
-    - [ ] Write failing CliRunner tests for ctl stop and implement it
+    - [x] Write failing WorktreeMode tests for stop at each checkpoint
+    - [x] Implement the checkpoints and the stopped exit
+    - [x] Write failing tests for stale-message cleanup at start and implement it
+    - [x] Write failing CliRunner tests for ctl stop and implement it
 
 ---
 
@@ -288,3 +288,6 @@ RunSupervisor block/resume/stop, TaskExecution (extracted) blocks on failure_tag
 
 ### 2026-09-21 22:30 - mark-task-complete
 Build fixer blocks ci_fix/ci_retries_exhausted and reruns fix loop with note; push failure blocks push/push_failed and retries; exit mode unchanged; factory+assembler wiring tested; unit 1625 passed
+
+### 2026-09-21 22:43 - mark-task-complete
+Stop checkpoints (task loop, review loop, blocked) → run_finished stopped exit 0; stale resume/stop discarded at start, notes kept; ctl stop refuses without live run; unit 1634 passed

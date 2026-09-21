@@ -72,6 +72,7 @@ class WorktreeMode:
 
     def execute(self):
         """Run the worktree task loop until all tasks are complete, journaling how the run ends."""
+        self._supervisor.discard_stale_requests()
         self._supervisor.record(
             "run_started", pid=os.getpid(), idea=self._work_project.name,
             branch=self._git_repo.branch, worktree=self._git_repo.working_tree_dir,
@@ -106,6 +107,7 @@ class WorktreeMode:
             self._loop_steps.ci_monitor.wait_for_workflow_completion(self._git_repo.branch, self._git_repo.head_sha)
 
         while True:
+            self._supervisor.raise_if_stop_requested()
             t = Timer.start()
             if self._loop_steps.build_fixer.check_and_fix_ci():
                 t.print("check_and_fix_ci (fix)")
@@ -135,6 +137,7 @@ class WorktreeMode:
         """Poll for review feedback until the PR is merged or closed."""
         print_message("Waiting for review feedback...")
         while True:
+            self._supervisor.raise_if_stop_requested()
             if self._loop_steps.build_fixer.check_and_fix_ci():
                 continue
 

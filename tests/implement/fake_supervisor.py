@@ -8,9 +8,23 @@ class RecordingSupervisor:
     a ResumeRequest is returned, an exception instance (e.g. RunStopped()) is raised.
     """
 
-    def __init__(self, block_responses=()):
+    def __init__(self, block_responses=(), stop_at_checkpoint=None):
         self.events = []
         self._block_responses = list(block_responses)
+        self._stop_at_checkpoint = stop_at_checkpoint
+        self.checkpoints = 0
+        self.stale_requests_discarded = False
+
+    def raise_if_stop_requested(self):
+        from i2code.supervision.supervisor import RunStopped
+
+        self.checkpoints += 1
+        if self.checkpoints == self._stop_at_checkpoint:
+            self.record("stop_requested")
+            raise RunStopped()
+
+    def discard_stale_requests(self):
+        self.stale_requests_discarded = True
 
     def record(self, event, **fields):
         self.events.append({"event": event, **fields})

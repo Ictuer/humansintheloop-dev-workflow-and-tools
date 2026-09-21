@@ -211,3 +211,23 @@ class TestCtlResume:
 
         assert result.exit_code == 1
         assert "not running" in result.output
+
+
+@pytest.mark.unit
+class TestCtlStop:
+
+    def test_stop_live_run_posts_request(self, repo):
+        _start_run(_journal(repo))
+
+        result = _invoke("stop", "demo")
+
+        assert result.exit_code == 0
+        assert "stop requested for demo" in result.output
+        assert Inbox(RunPaths.for_idea(repo, "demo")).count("stop") == 1
+
+    def test_stop_refuses_without_live_run(self, repo):
+        result = CliRunner().invoke(ctl, ["stop", "demo"])
+
+        assert result.exit_code == 1
+        assert "demo is not running" in result.output
+        assert Inbox(RunPaths.for_idea(repo, "demo")).count("stop") == 0

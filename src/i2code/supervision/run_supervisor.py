@@ -46,6 +46,10 @@ class RunSupervisor:
             if resumes:
                 return self._resumed(resumes[0])
 
+    def discard_stale_requests(self) -> None:
+        """Drop resume/stop requests left by an earlier run; queued notes stay."""
+        self._inbox.discard("resume", "stop")
+
     def raise_if_stop_requested(self) -> None:
         if self._inbox.take("stop"):
             self.record("stop_requested")

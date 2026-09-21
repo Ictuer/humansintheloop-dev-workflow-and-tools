@@ -118,6 +118,7 @@ def _make_worktree_mode(plan_path, idea_dir, work_dir, **kwargs):
         review_processor=review_processor,
         commit_recovery=commit_recovery,
         clock=kwargs.get('clock'),
+        sleep=kwargs.get('sleep'),
         **({'supervisor': supervisor} if supervisor else {}),
     )
     mode = WorktreeMode(

@@ -80,6 +80,16 @@ def resume_cmd(idea, note, fresh):
     click.echo(f"resume requested for {name}")
 
 
+@ctl.command("stop")
+@click.argument("idea")
+def stop_cmd(idea):
+    """Ask the idea's run to stop at its next checkpoint (between tasks, in the review loop, or while blocked)."""
+    name, paths = _locate(idea)
+    _live_status(name, paths)
+    Inbox(paths).post("stop")
+    click.echo(f"stop requested for {name}; it takes effect between tasks, in the review loop, or while blocked")
+
+
 @ctl.command("events")
 @click.argument("idea")
 @click.option("--limit", type=int, default=20, show_default=True, help="Number of most recent events to print")
