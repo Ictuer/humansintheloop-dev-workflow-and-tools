@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from i2code.supervision.run_journal import RunJournal, fold_status
+from i2code.supervision.run_journal import RunJournal, fold_status, read_events
 from i2code.supervision.run_paths import RunPaths
 
 
@@ -154,3 +154,50 @@ class TestRunJournal:
         journal.record("run_started", pid=1, idea="demo")
 
         assert sorted(p.name for p in paths.directory.iterdir()) == ["events.jsonl", "status.json"]
+
+
+@pytest.mark.unit
+class TestRunJournalRobustness:
+    """A damaged or unwritable journal never breaks the run."""
+
+    def test_events_are_written_ascii_only(self, tmp_path):
+        paths = RunPaths(tmp_path / "run")
+
+        RunJournal(paths, clock=_Clock()).record("task_started", title="Tác vụ thứ nhất")
+
+        raw = paths.events_file.read_bytes()
+        assert raw.isascii()
+        assert _read_events(paths)[0]["title"] == "Tác vụ thứ nhất"
+
+    def test_truncated_multibyte_last_line_is_skipped_and_repaired(self, tmp_path):
+        paths = RunPaths(tmp_path / "run")
+        paths.directory.mkdir(parents=True)
+        good = json.dumps({"ts": "t", "event": "run_started", "pid": 1, "idea": "demo"})
+        paths.events_file.write_bytes(good.encode() + b'\n{"ts": "t", "event": "task_started", "title": "T\xc3')
+
+        journal = RunJournal(paths, clock=_Clock())
+        journal.record("run_started", pid=2, idea="demo")
+
+        events = [e for e in read_events(paths)]
+        assert [(e["event"], e.get("pid")) for e in events] == [("run_started", 1), ("run_started", 2)]
+        assert json.loads(paths.status_file.read_text())["pid"] == 2
+
+    def test_unwritable_journal_warns_once_and_keeps_going(self, tmp_path, capsys):
+        blocker = tmp_path / "not-a-dir"
+        blocker.write_text("x")
+        journal = RunJournal(RunPaths(blocker / "run"), clock=_Clock())
+
+        journal.record("run_started", pid=1, idea="demo")
+        journal.record("task_started", task="1.1")
+
+        err = capsys.readouterr().err
+        assert err.count("run journal disabled") == 1
+
+    def test_unreadable_journal_at_start_disables_it(self, tmp_path, capsys):
+        paths = RunPaths(tmp_path / "run")
+        paths.events_file.mkdir(parents=True)
+
+        journal = RunJournal(paths, clock=_Clock())
+        journal.record("run_started", pid=1, idea="demo")
+
+        assert "run journal disabled" in capsys.readouterr().err

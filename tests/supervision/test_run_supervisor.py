@@ -115,3 +115,20 @@ class TestRunSupervisorStop:
         _supervisor(paths, _ScriptedSleep(), []).discard_stale_requests()
 
         assert (inbox.count("resume"), inbox.count("stop"), inbox.count("note")) == (0, 0, 1)
+
+
+@pytest.mark.unit
+class TestRunSupervisorWithoutJournal:
+
+    def test_block_exits_when_the_journal_is_disabled(self, tmp_path):
+        blocker = tmp_path / "not-a-dir"
+        blocker.write_text("x")
+        paths = RunPaths(blocker / "run")
+        messages = []
+        supervisor = _supervisor(paths, _ScriptedSleep(), messages)
+
+        with pytest.raises(SystemExit) as exit_info:
+            supervisor.block("task", "failure_tag", task="1.1", detail="", session_id=None, permission_denials=[])
+
+        assert exit_info.value.code == 1
+        assert "cannot wait for i2code ctl" in messages[-1]

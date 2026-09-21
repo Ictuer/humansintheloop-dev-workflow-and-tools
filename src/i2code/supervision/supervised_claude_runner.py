@@ -68,7 +68,10 @@ class SupervisedClaudeRunner:
     def _deliver_notes(self, command: ClaudeCodeCommand) -> ClaudeCodeCommand:
         if not _is_steerable(command):
             return command
-        notes = [message["text"] for message in self._notes.take("note")]
+        try:
+            notes = [message["text"] for message in self._notes.take("note")]
+        except OSError:
+            return command
         if not notes:
             return command
         self._journal.record("note_delivered", label=command.label, count=len(notes))

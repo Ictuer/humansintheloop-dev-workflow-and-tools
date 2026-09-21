@@ -1,5 +1,6 @@
 """RunSupervisor: journal + inbox for one run; blocks a failed run until ctl resumes or stops it."""
 
+import sys
 import time
 from typing import Any, Callable
 
@@ -35,6 +36,9 @@ class RunSupervisor:
 
     def block(self, kind: str, reason: str, **details: Any) -> ResumeRequest:
         self.record("blocked", kind=kind, reason=reason, **details)
+        if not self._journal.enabled:
+            self._echo(f"Failed ({kind}: {reason}); cannot wait for i2code ctl without a run journal, exiting.")
+            sys.exit(1)
         self._echo(
             f"Blocked ({kind}: {reason}). Waiting for "
             f"`i2code ctl resume {self._idea} [--note TEXT] [--fresh]` or `i2code ctl stop {self._idea}`..."

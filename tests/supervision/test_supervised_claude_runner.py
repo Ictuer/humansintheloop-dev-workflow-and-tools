@@ -126,3 +126,20 @@ class TestSupervisedClaudeRunnerNotes:
 
         assert inner.calls[0][1].prompt == "p"
         assert "note_delivered" not in [e["event"] for e in journal.events]
+
+
+class BrokenNotes:
+    def take(self, kind):
+        raise PermissionError("inbox unreadable")
+
+
+@pytest.mark.unit
+class TestSupervisedClaudeRunnerBrokenInbox:
+
+    def test_unreadable_inbox_delivers_no_notes(self):
+        inner = FakeClaudeRunner()
+        runner = SupervisedClaudeRunner(inner, RecordingJournal(), notes=BrokenNotes())
+
+        runner.execute(ClaudeCodeCommand(prompt="p", cwd="/c", label="task"))
+
+        assert inner.calls[0][1].prompt == "p"

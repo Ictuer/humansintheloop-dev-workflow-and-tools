@@ -230,6 +230,48 @@ Proves the control plane with a mock-Claude run and documents how a supervising 
 
 ---
 
+## Steel Thread 5: Review Fixes
+Fixes from an independent review of the branch: journal robustness, exit-path journaling, resume races, and small correctness issues.
+
+- [x] **Task 5.1: The run journal can never break an implement run**
+  - TaskType: OUTCOME
+  - Entrypoint: `i2code implement <idea-dir> (any mode) with a damaged or unwritable run journal`
+  - Observable: events.jsonl is written ASCII-only; a truncated or non-UTF-8 last line is skipped when reading and repaired with a newline before the next append, so the new run_started is its own line; an OSError while reading or writing the journal prints one warning and turns journaling off for the run instead of failing it; an OSError reading the inbox delivers no notes
+  - Evidence: `uv run python -m pytest tests/supervision -m unit`
+  - Steps:
+    - [x] Write failing tests: truncated multibyte last line, glued append after a partial line, OSError on append and on read, inbox OSError while taking notes
+    - [x] Write events with ensure_ascii, decode lines with errors=replace, repair a missing final newline before appending
+    - [x] Catch OSError in RunJournal (warn once, then no-op) and in note delivery
+
+- [ ] **Task 5.2: run_finished is recorded on every exit path**
+  - TaskType: OUTCOME
+  - Entrypoint: `i2code implement <idea-dir> when an unexpected exception escapes the loop`
+  - Observable: Any exception other than RunStopped, SystemExit and KeyboardInterrupt records run_finished failed with exit code 1 and is re-raised
+  - Evidence: `uv run python -m pytest tests/implement/test_worktree_mode_journal.py -m unit`
+  - Steps:
+    - [ ] Write a failing test with a collaborator that raises RuntimeError
+    - [ ] Record run_finished for any other exception and re-raise
+
+- [ ] **Task 5.3: Resume requests cannot leak into a later block or be lost**
+  - TaskType: OUTCOME
+  - Entrypoint: `i2code ctl resume <idea> racing with the run`
+  - Observable: block() discards resume requests that were queued before the block started; several resumes read in the same poll are merged (notes joined oldest first, fresh from the newest) and the resumed event records how many were merged
+  - Evidence: `uv run python -m pytest tests/supervision/test_run_supervisor.py -m unit`
+  - Steps:
+    - [ ] Write failing tests for a stale resume before the block and for two resumes in one poll
+    - [ ] Discard stale resumes on entry and merge concurrent ones
+
+- [ ] **Task 5.4: Small correctness fixes from review**
+  - TaskType: OUTCOME
+  - Entrypoint: `i2code implement <idea-dir> --non-interactive with supervision options`
+  - Observable: A CI-fix note is cleared when the loop ends without using it; a result whose stdout already has <SUCCESS> is not nudged; trunk mode is not journaled and takes no notes; --claude-args also rejects -r, -c, --continue, --allowed-tools and --fork-session; docs state that notes are delivered once and that interactive --claude-args must not end with a flag that takes a value
+  - Evidence: `uv run python -m pytest tests/implement -m unit`
+  - Steps:
+    - [ ] Write failing tests for each fix
+    - [ ] Implement the fixes and update docs
+
+---
+
 ## Change History
 
 ### 2026-09-21 21:45 - insert-thread-after
@@ -300,3 +342,9 @@ test_supervised_run_integration.py: block→ctl status→ctl resume→2 tasks co
 
 ### 2026-09-21 22:58 - mark-task-complete
 implement-steps.md: options, nudges/blocking, run journal section, key files; ctl.adoc: Supervising a run worked example; unit suite 1634 passed
+
+### 2026-09-21 23:09 - insert-thread-after
+Independent code review findings
+
+### 2026-09-21 23:10 - mark-task-complete
+ASCII events, undecodable/partial lines skipped, newline repair, OSError→warn+disable, inbox OSError→no notes, block exits when journal disabled; 657 passed
