@@ -31,6 +31,14 @@ class DiagnosticInfo:
     last_messages: List[Dict[str, Any]] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class RunStats:
+    """Run statistics from the stream-json ``result`` message."""
+    num_turns: Optional[int] = None
+    cost_usd: Optional[float] = None
+    duration_s: Optional[float] = None
+
+
 @dataclass
 class ClaudeResult:
     """Result of running Claude with output capture."""
@@ -38,6 +46,8 @@ class ClaudeResult:
     output: CapturedOutput = field(default_factory=CapturedOutput)
     diagnostics: DiagnosticInfo = field(default_factory=DiagnosticInfo)
     result_text: str = ""
+    session_id: Optional[str] = None
+    stats: RunStats = field(default_factory=RunStats)
 
 
 @dataclass(frozen=True)
@@ -171,6 +181,26 @@ def _parse_stream_json_output(full_stdout: str) -> Tuple[DiagnosticInfo, str]:
     return diagnostics, result_text if result_text is not None else full_stdout
 
 
+def _first_session_id(messages: List[Dict[str, Any]]) -> Optional[str]:
+    for msg in messages:
+        if msg.get('session_id'):
+            return msg['session_id']
+    return None
+
+
+def _run_stats(messages: List[Dict[str, Any]]) -> RunStats:
+    result_messages = [msg for msg in messages if msg.get('type') == 'result']
+    if not result_messages:
+        return RunStats()
+    last = result_messages[-1]
+    duration_ms = last.get('duration_ms')
+    return RunStats(
+        num_turns=last.get('num_turns'),
+        cost_usd=last.get('total_cost_usd'),
+        duration_s=duration_ms / 1000 if duration_ms is not None else None,
+    )
+
+
 def _run_claude_with_output_capture(cmd: List[str], cwd: str, debug: bool = False) -> ClaudeResult:
     """Run Claude command, capturing output while displaying progress.
 
@@ -223,12 +253,15 @@ def _run_claude_with_output_capture(cmd: List[str], cwd: str, debug: bool = Fals
 
     full_stdout = ''.join(stdout_chunks)
     diagnostics, result_text = _parse_stream_json_output(full_stdout)
+    messages = list(_iter_json_messages(full_stdout))
 
     return ClaudeResult(
         returncode=process.returncode,
         output=CapturedOutput(full_stdout, ''.join(stderr_chunks)),
         diagnostics=diagnostics,
         result_text=result_text,
+        session_id=_first_session_id(messages),
+        stats=_run_stats(messages),
     )
 
 

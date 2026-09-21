@@ -85,15 +85,15 @@ Lets callers drop the `claude` wrapper on PATH, the `I2CODE_ALLOW_CLAUDE_PUSH` v
 ## Steel Thread 2: Run Journal and ctl status
 Makes a running implement observable: every Claude invocation and lifecycle step lands in events.jsonl and status.json, readable with i2code ctl status and ctl events (spec §2–§4).
 
-- [ ] **Task 2.1: Claude results carry the session id and run statistics**
+- [x] **Task 2.1: Claude results carry the session id and run statistics**
   - TaskType: INFRA
   - Entrypoint: `ClaudeRunner.execute(command) in non-interactive mode`
   - Observable: ClaudeResult.session_id is the first session_id seen in the stream-json output; ClaudeResult.stats has num_turns, cost_usd and duration_s from the result message; both are empty when the output has no such messages
   - Evidence: `uv run python -m pytest tests/implement/test_claude_runner.py -m unit`
   - Steps:
-    - [ ] Write failing tests for _parse_stream_json_output with init/result messages, without them, and with invalid lines
-    - [ ] Add session_id and stats to ClaudeResult and fill them in _run_claude_with_output_capture
-    - [ ] Add an integration_claude test that runs a one-line prompt and asserts a non-empty session_id
+    - [x] Write failing tests for _parse_stream_json_output with init/result messages, without them, and with invalid lines
+    - [x] Add session_id and stats to ClaudeResult and fill them in _run_claude_with_output_capture
+    - [x] Add an integration_claude test that runs a one-line prompt and asserts a non-empty session_id
 
 - [ ] **Task 2.2: RunJournal writes events.jsonl and status.json under the git common dir**
   - TaskType: INFRA
@@ -248,3 +248,6 @@ ClaudeRunner global_args + ImplementOpts.claude_args (shlex, owned-flag rejectio
 
 ### 2026-09-21 21:54 - mark-task-complete
 allow_push threaded CLI→opts→ProjectSetup→permissions (deny rule removed) and TaskCommandOpts→task_execution.j2; env var removed; default prompt byte-identical; unit suite 1497 passed
+
+### 2026-09-21 21:57 - mark-task-complete
+ClaudeResult.session_id + RunStats from stream-json (unit tests) and verified against real claude (integration_claude passed); unit suite 1500 passed

@@ -306,6 +306,41 @@ class TestRunClaudeWithOutputCaptureResultText:
         assert result.result_text == "raw output\n"
 
 
+@pytest.mark.unit
+class TestRunClaudeWithOutputCaptureSessionAndStats:
+    """run_claude_with_output_capture reads the session id and run statistics from stream-json."""
+
+    def test_session_id_and_stats_from_init_and_result_messages(self, mocker):
+        result = _run_with_mocked_pipes(mocker, [
+            b'{"type":"system","subtype":"init","session_id":"s-1"}\n',
+            b'not json\n',
+            b'{"type":"assistant","session_id":"s-1","message":{"content":[]}}\n',
+            b'{"type":"result","result":"done","session_id":"s-1","num_turns":7,'
+            b'"total_cost_usd":0.42,"duration_ms":61500}\n',
+        ], [])
+
+        assert result.session_id == "s-1"
+        assert result.stats.num_turns == 7
+        assert result.stats.cost_usd == 0.42
+        assert result.stats.duration_s == 61.5
+
+    def test_first_session_id_wins(self, mocker):
+        result = _run_with_mocked_pipes(mocker, [
+            b'{"type":"system","subtype":"init","session_id":"first"}\n',
+            b'{"type":"result","result":"x","session_id":"second"}\n',
+        ], [])
+
+        assert result.session_id == "first"
+
+    def test_missing_messages_leave_session_and_stats_empty(self, mocker):
+        result = _run_with_mocked_pipes(mocker, [b"raw output\n"], [])
+
+        assert result.session_id is None
+        assert result.stats.num_turns is None
+        assert result.stats.cost_usd is None
+        assert result.stats.duration_s is None
+
+
 def _patch_interactive_run(mocker):
     mock_completed = MagicMock()
     mock_completed.returncode = 0
@@ -577,3 +612,18 @@ class TestClaudeRunnerExecuteRealClaude:
         assert result.returncode == 0
         assert result.result_text
         assert not result.result_text.startswith("{")
+
+    def test_execute_batch_returns_session_id_and_stats_from_real_claude(self, tmp_path):
+        command = ClaudeCodeCommand(
+            prompt="Reply with exactly the word: pong",
+            cwd=str(tmp_path),
+            interactive=False,
+            allowed_tools="Read(/dev/null)",
+        )
+
+        result = ClaudeRunner().execute(command)
+
+        assert result.returncode == 0
+        assert result.session_id
+        assert result.stats.num_turns is not None and result.stats.num_turns >= 1
+        assert result.stats.duration_s is not None and result.stats.duration_s > 0
