@@ -112,7 +112,9 @@ blocker. A resumed invocation that fails validation for another reason blocks wi
 
 `stop` is honoured at the top of the task loop, in the review poll loop, and while blocked. i2code then writes
 `stop_requested` and `run_finished` (`stopped`) and exits 0. At start, `resume` and `stop` messages left from an
-earlier run are deleted; notes are kept.
+earlier run are deleted; notes are kept. A SIGTERM from outside (for example the caller's own stop script) also ends the
+run as `stopped`: `run_finished` is written with exit code 143 and the process exits 143, instead of leaving the
+journal in a non-final state.
 
 ## 9. `--resume-on-api-error N` (default 0)
 

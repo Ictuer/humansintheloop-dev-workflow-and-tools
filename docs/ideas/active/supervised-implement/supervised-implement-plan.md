@@ -289,6 +289,20 @@ Keeps a task's Claude session alive across temporary Claude API errors instead o
 
 ---
 
+## Steel Thread 7: Journal External Termination
+A run stopped with SIGTERM left its journal in a non-final state (seen 2026-09-22); record it as stopped.
+
+- [x] **Task 7.1: A SIGTERM from outside is journaled as a stopped run**
+  - TaskType: OUTCOME
+  - Entrypoint: `kill -TERM <implement pid> during i2code implement (worktree mode)`
+  - Observable: The run journals run_finished with status stopped and exit code 143 and exits 143; the previous SIGTERM handler is restored when execute returns; no handler is installed outside the main thread
+  - Evidence: `uv run python -m pytest tests/implement/test_worktree_mode_journal.py -m unit`
+  - Steps:
+    - [x] Write failing tests: SIGTERM during the loop, handler restored afterwards
+    - [x] Install a SIGTERM handler for the duration of WorktreeMode.execute and record run_finished stopped/143
+
+---
+
 ## Change History
 
 ### 2026-09-21 21:45 - insert-thread-after
@@ -380,3 +394,9 @@ Real run lost two sessions to ENOTFOUND and 529 Overloaded
 
 ### 2026-09-22 08:39 - mark-task-complete
 API-error resume with 60→900 s backoff, label retry (steerable), fallback to fresh attempt, opts/CLI/trunk; unit+integration 1678 passed, pyright 0
+
+### 2026-09-22 10:23 - insert-thread-after
+Observed: pipeline killed by SIGTERM, journal stayed running/dead
+
+### 2026-09-22 10:25 - mark-task-complete
+SIGTERM → run_finished stopped 143, handler restored; unit + e2e (SIGTERM while blocked) pass; unit+integration 1680 passed

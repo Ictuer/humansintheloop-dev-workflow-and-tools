@@ -1,6 +1,7 @@
 """WorktreeMode records the run, task, push and CI lifecycle in the run journal."""
 
 import os
+import signal
 import tempfile
 
 import pytest
@@ -136,3 +137,45 @@ class TestRunFinishedOnUnexpectedErrors:
                 mode.execute()
 
             assert supervisor.events[-1] == {"event": "run_finished", "status": "failed", "exit_code": 1}
+
+
+class _TerminatedRecovery:
+    """Sends SIGTERM to this process while the loop runs, as an outside stop script would."""
+
+    def commit_if_needed(self):
+        os.kill(os.getpid(), signal.SIGTERM)
+
+
+@pytest.mark.unit
+class TestSigtermIsJournaledAsStopped:
+
+    def _mode(self, tmpdir, supervisor):
+        plan_path, idea_dir = _setup_idea(tmpdir, [(1, 1, "Only", False)], ci_workflow=True)
+        mode, *_ = _make_worktree_mode(
+            plan_path, idea_dir, tmpdir, opts=ImplementOpts(idea_directory=idea_dir),
+            commit_recovery=_TerminatedRecovery(), supervisor=supervisor,
+        )
+        return mode
+
+    def test_sigterm_records_stopped_run_and_exits_143(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            supervisor = RecordingSupervisor()
+
+            with pytest.raises(SystemExit) as exit_info:
+                self._mode(tmpdir, supervisor).execute()
+
+            assert exit_info.value.code == 143
+            assert supervisor.events[-1] == {"event": "run_finished", "status": "stopped", "exit_code": 143}
+
+    def test_previous_sigterm_handler_is_restored(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            def previous(signum, frame):
+                raise AssertionError("previous handler must not run during execute")
+
+            original = signal.signal(signal.SIGTERM, previous)
+            try:
+                with pytest.raises(SystemExit):
+                    self._mode(tmpdir, RecordingSupervisor()).execute()
+                assert signal.getsignal(signal.SIGTERM) is previous
+            finally:
+                signal.signal(signal.SIGTERM, original)

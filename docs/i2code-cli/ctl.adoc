@@ -84,6 +84,7 @@ Asks the run to stop gracefully. The run checks for the request between tasks, i
 blocked, then journals `stop_requested` and `run_finished` (`stopped`) and exits 0. A Claude invocation that is
 already running is not interrupted. Exits 1 when no live run exists.
 When a run starts, `resume` and `stop` requests left by an earlier run are discarded; queued notes are kept.
+A SIGTERM sent to the run (for example by the caller's own stop script) is journaled the same way, as `stopped` with exit code 143.
 
 == Events
 
@@ -102,7 +103,7 @@ When a run starts, `resume` and `stop` requests left by an earlier run are disca
 | `blocked` | `kind` (`task`, `ci_fix`, `push`), `reason` (`failure_tag`, `missing_tag`, `attempts_exhausted`, `ci_retries_exhausted`, `push_failed`; after a resume also `no_commit`, `not_marked_complete`, `no_ci_workflow`), `task`, `detail`, `session_id`, `permission_denials`
 | `resumed` | `mode` (`continue`, `fresh`), `note`, `merged` (resume requests read together; their notes are joined)
 | `stop_requested` | —
-| `run_finished` | `status` (`completed`, `stopped`, `failed`), `exit_code`
+| `run_finished` | `status` (`completed`, `stopped`, `failed`), `exit_code` (143 after SIGTERM)
 |===
 
 Every event also has `ts` (ISO 8601 with UTC offset) and `event`.

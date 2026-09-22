@@ -155,6 +155,9 @@ class _ImplementProcess:
         finally:
             self._log.close()
 
+    def terminate(self):
+        self._process.terminate()
+
     def kill(self):
         if self._process.poll() is None:
             self._process.kill()
@@ -207,3 +210,14 @@ class TestSupervisedRun:
         assert final["state"] == "stopped"
         assert final["exit_code"] == 0
         assert os.path.exists(final["events_file"])
+
+    def test_sigterm_ends_a_blocked_run_as_stopped(self, supervised_run):
+        main, run = supervised_run
+
+        _wait_for_state(main, "blocked")
+        run.terminate()
+
+        assert run.wait() == 143
+        final = _ctl_status(main)
+        assert final["state"] == "stopped"
+        assert final["exit_code"] == 143

@@ -1,8 +1,11 @@
 """WorktreeMode: execute plan tasks using worktree + PR + CI loop."""
 
 import os
+import signal
 import sys
+import threading
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from i2code.claude.permissions import calculate_claude_permissions
@@ -15,6 +18,28 @@ from i2code.implement.task_execution import TaskExecution
 from i2code.supervision.supervisor import NullSupervisor, RunStopped, Supervisor
 
 REVIEW_POLL_INTERVAL_SECONDS = 30
+SIGTERM_EXIT_CODE = 143
+
+
+class RunTerminated(Exception):
+    """SIGTERM arrived from outside the run."""
+
+
+def _raise_run_terminated(signum, frame):
+    raise RunTerminated()
+
+
+@contextmanager
+def _sigterm_ends_run():
+    """Turn SIGTERM into RunTerminated while the loop runs, so the journal can record how the run ended."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    previous = signal.signal(signal.SIGTERM, _raise_run_terminated)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, previous)
 
 
 def _exit_code(exit_request: SystemExit) -> int:
@@ -79,7 +104,12 @@ class WorktreeMode:
             on_failure=self._opts.on_failure, nudge_missing_tag=self._opts.nudge_missing_tag,
         )
         try:
-            self._run_loop()
+            with _sigterm_ends_run():
+                self._run_loop()
+        except RunTerminated:
+            print_message("Terminated (SIGTERM).")
+            self._supervisor.record("run_finished", status="stopped", exit_code=SIGTERM_EXIT_CODE)
+            sys.exit(SIGTERM_EXIT_CODE)
         except RunStopped:
             print_message("Stopped by the supervising session.")
             self._supervisor.record("run_finished", status="stopped", exit_code=0)
