@@ -46,7 +46,7 @@ i2code ctl note IDEA TEXT
 ----
 
 Queues a note in the run's inbox (allowed even when nothing is running).
-Before its next Claude invocation labelled `task`, `ci_fix`, `fix_feedback`, `nudge` or `resume`, the run removes
+Before its next Claude invocation labelled `task`, `ci_fix`, `fix_feedback`, `nudge`, `resume` or `retry`, the run removes
 the queued notes and appends them to the prompt:
 
 ----
@@ -93,7 +93,7 @@ When a run starts, `resume` and `stop` requests left by an earlier run are disca
 
 | `run_started` | `pid`, `idea`, `branch`, `worktree`
 | `task_started` | `task`, `title`, `index`, `total`
-| `claude_started` | `label`, `resumes_session`
+| `claude_started` | `label` (`task`, `ci_fix`, `triage`, `fix_feedback`, `recovery`, `nudge`, `resume`, `retry`, ...), `resumes_session`
 | `claude_finished` | `label`, `exit_code`, `outcome` (`success`, `failure`, `missing`), `session_id`, `num_turns`, `cost_usd`, `duration_s`, `summary`
 | `note_delivered` | `label`, `count`
 | `task_completed` | `task`, `duration_s`, `head`

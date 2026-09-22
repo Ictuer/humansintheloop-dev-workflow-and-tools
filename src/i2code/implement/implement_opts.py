@@ -38,6 +38,7 @@ class ImplementOpts:
     allow_push: bool = False
     nudge_missing_tag: int = 0
     on_failure: str = "exit"
+    resume_on_api_error: int = 0
 
     _INNER_FORWARDED = {
         "cleanup",
@@ -53,6 +54,7 @@ class ImplementOpts:
         "claude_args",
         "allow_push",
         "nudge_missing_tag",
+        "resume_on_api_error",
     }
 
     _INNER_IGNORED = {
@@ -104,6 +106,8 @@ class ImplementOpts:
             incompatible.append("--nudge-missing-tag")
         if self.on_failure != "exit":
             incompatible.append("--on-failure")
+        if self.resume_on_api_error != 0:
+            incompatible.append("--resume-on-api-error")
         if incompatible:
             raise click.UsageError(
                 f"--trunk cannot be combined with: {', '.join(incompatible)}"

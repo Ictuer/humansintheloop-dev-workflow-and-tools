@@ -272,6 +272,23 @@ Fixes from an independent review of the branch: journal robustness, exit-path jo
 
 ---
 
+## Steel Thread 6: Resume After Temporary API Errors
+Keeps a task's Claude session alive across temporary Claude API errors instead of starting over (spec §9).
+
+- [x] **Task 6.1: --resume-on-api-error resumes a session cut off by a temporary Claude API error**
+  - TaskType: OUTCOME
+  - Entrypoint: `i2code implement <idea-dir> --non-interactive --resume-on-api-error 5`
+  - Observable: A task invocation that exits non-zero with an 'API Error' message and a session id is resumed with label retry after 60, 120, 240 ... s (capped at 900 s) up to N times, then judged as usual; other failures and the default 0 keep today's fresh attempts; the option is forwarded to the inner command and rejected with --trunk
+  - Evidence: `uv run python -m pytest tests/implement/test_worktree_mode_api_retry.py tests/implement/test_command_builder.py tests/implement/test_implement_opts.py -m unit`
+  - Steps:
+    - [x] Write failing CommandBuilder tests for build_api_retry_command (real and mock)
+    - [x] Add api_error_resume.j2 and build_api_retry_command
+    - [x] Write failing WorktreeMode tests: API error then success, backoff sequence, non-API failure not resumed, no session not resumed, default 0 unchanged
+    - [x] Add resume_on_api_error to CLI and ImplementOpts, an injectable sleep for TaskExecution, and the retry loop
+    - [x] Deliver notes to retry invocations; document the option
+
+---
+
 ## Change History
 
 ### 2026-09-21 21:45 - insert-thread-after
@@ -357,3 +374,9 @@ Stale resumes discarded on block entry; resumes in one poll merged (notes joined
 
 ### 2026-09-21 23:14 - mark-task-complete
 CI-fix note cleared, nudge skipped when stdout has SUCCESS, trunk unsupervised, more owned flags rejected, docs; unit+integration 1665 passed
+
+### 2026-09-22 08:35 - insert-thread-after
+Real run lost two sessions to ENOTFOUND and 529 Overloaded
+
+### 2026-09-22 08:39 - mark-task-complete
+API-error resume with 60→900 s backoff, label retry (steerable), fallback to fresh attempt, opts/CLI/trunk; unit+integration 1678 passed, pyright 0

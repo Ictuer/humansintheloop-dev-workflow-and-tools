@@ -7,7 +7,7 @@ from i2code.implement.claude_runner import ClaudeCodeCommand, ClaudeResult
 from i2code.supervision.supervisor import EventRecorder
 
 SUMMARY_LENGTH = 300
-STEERABLE_LABELS = frozenset({"task", "ci_fix", "fix_feedback", "nudge", "resume"})
+STEERABLE_LABELS = frozenset({"task", "ci_fix", "fix_feedback", "nudge", "resume", "retry"})
 NOTES_HEADER = "Notes from the supervising session (oldest first):"
 
 

@@ -46,6 +46,17 @@ class CommandBuilder:
             label="nudge",
         )
 
+    def build_api_retry_command(self, original: ClaudeCodeCommand, session_id: str) -> ClaudeCodeCommand:
+        """Resume the session of ``original`` after a temporary Claude API error cut it off."""
+        if original.mock_command is not None:
+            return replace(original, mock_command=[original.mock_command[0], f"retry-{session_id}"], label="retry")
+        return replace(
+            original,
+            prompt=render_template("api_error_resume.j2", package="i2code.implement"),
+            session_id=SessionId(session_id, is_new=False),
+            label="retry",
+        )
+
     def build_resume_command(
         self, original: ClaudeCodeCommand, session_id: str, note: Optional[str],
     ) -> ClaudeCodeCommand:

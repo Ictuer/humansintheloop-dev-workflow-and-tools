@@ -74,3 +74,13 @@ class TestOnFailureCli:
 
         assert result.exit_code == 2
         assert received_opts == []
+
+
+@pytest.mark.unit
+class TestResumeOnApiErrorCli:
+
+    def test_value_reaches_opts(self):
+        result, received_opts = _invoke(["--resume-on-api-error", "5"])
+
+        assert result.exit_code == 0, result.output
+        assert received_opts[0].resume_on_api_error == 5

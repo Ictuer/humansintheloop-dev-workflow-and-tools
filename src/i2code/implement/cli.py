@@ -58,6 +58,9 @@ from i2code.implement.scaffold_opts import ScaffoldOpts
               help="Let Claude push the idea branch mid-task (never --force); i2code still pushes after each task")
 @click.option("--on-failure", type=click.Choice(["exit", "wait"]), default="exit", show_default=True,
               help="On a failed task, CI-fix exhaustion or push failure: exit, or wait for `i2code ctl resume|stop`")
+@click.option("--resume-on-api-error", type=click.IntRange(min=0), default=0, metavar="N",
+              help="Resume a Claude session cut off by a temporary API error up to N times, waiting 60 s, 120 s, ... "
+                   "(default: 0)")
 @click.option("--nudge-missing-tag", type=click.IntRange(min=0), default=0, metavar="N",
               help="Resume a Claude session that ended without <SUCCESS>/<FAILURE> up to N times (default: 0)")
 @click.option("--claude-args", metavar="TEXT",

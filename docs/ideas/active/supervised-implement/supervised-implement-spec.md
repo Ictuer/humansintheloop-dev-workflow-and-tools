@@ -114,6 +114,16 @@ blocker. A resumed invocation that fails validation for another reason blocks wi
 `stop_requested` and `run_finished` (`stopped`) and exits 0. At start, `resume` and `stop` messages left from an
 earlier run are deleted; notes are kept.
 
+## 9. `--resume-on-api-error N` (default 0)
+
+Added after a real run lost two fresh sessions (about ten hours of context) to temporary Claude API errors
+(`ENOTFOUND` overnight, then `529 Overloaded`). Non-interactive only. When a task invocation exits non-zero, has a
+session id, and its error message is a Claude API error (`API Error: ...`), i2code waits and resumes the same session
+(`--resume <session id>`, label `retry`, prompt: the previous turn was interrupted by a temporary API error; continue
+where you left off; finish with an outcome tag) up to N times per attempt. Waits grow as 60, 120, 240, ... seconds,
+capped at 15 minutes. Afterwards the result is judged as usual (nudges apply; a still-failing result counts as a
+failed attempt). Queued notes are delivered to `retry` invocations.
+
 ## Out of scope
 
 Trunk and isolate modes for the journal and control commands; interrupting a running Claude process from

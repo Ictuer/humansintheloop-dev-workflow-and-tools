@@ -42,6 +42,7 @@ The command selects one of three execution modes based on flags. Mode instances 
 | `--claude-args TEXT` | Extra arguments for every `claude` invocation (e.g. `--effort high`) |
 | `--allow-push` | Let Claude push the idea branch mid-task |
 | `--nudge-missing-tag N` | Resume a session that ended without an outcome tag, up to N times |
+| `--resume-on-api-error N` | Resume a session cut off by a temporary Claude API error, up to N times with growing waits |
 | `--on-failure exit\|wait` | Exit (default) or block and wait for `i2code ctl resume\|stop` |
 | `--skip-ci-wait` | Skip waiting for CI after push (for testing) |
 

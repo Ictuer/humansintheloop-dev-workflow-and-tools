@@ -203,3 +203,15 @@ class TestClaudeArgsMoreOwnedFlags:
     def test_session_and_tool_flags_are_rejected(self, owned):
         with pytest.raises(click.UsageError, match=f"--claude-args cannot contain {owned}"):
             ImplementOpts(idea_directory="/tmp", claude_args=f"{owned} x")
+
+
+@pytest.mark.unit
+class TestResumeOnApiErrorOption:
+
+    def test_forwarded_to_inner_command(self):
+        flags = ImplementOpts(idea_directory="/tmp", resume_on_api_error=5).inner_cli_flags()
+        assert flags[flags.index("--resume-on-api-error") + 1] == "5"
+
+    def test_trunk_rejects_it(self):
+        with pytest.raises(click.UsageError, match="--resume-on-api-error"):
+            ImplementOpts(idea_directory="/tmp", trunk=True, resume_on_api_error=1).validate_trunk_options()

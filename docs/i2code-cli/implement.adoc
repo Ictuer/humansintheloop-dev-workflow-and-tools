@@ -48,6 +48,9 @@ See link:ctl.adoc[`i2code ctl`]. Cannot be combined with `--trunk` or `--isolate
 Non-interactive worktree mode: when Claude exits cleanly but its final message has neither `<SUCCESS>` nor `<FAILURE>`, resume the same session (`--resume`) and ask it to finish with a tag, up to `N` times per attempt (default 0).
 Covers sessions that end their turn while something still runs in the background, such as waiting for CI.
 
+`--resume-on-api-error N`::
+Non-interactive worktree mode: when a task invocation fails with a temporary Claude API error (`API Error: ...`, for example `529 Overloaded` or a lost connection), wait 60 s, 120 s, 240 s, ... (at most 15 minutes) and resume the same session up to `N` times per attempt instead of starting a new session (default 0).
+
 `--allow-push`::
 Let Claude push the idea branch to `origin` during a task (never with `--force`, never another branch), for tasks that need CI to run on a new commit before they can finish.
 The worktree's `.claude/settings.local.json` gets no `Bash(git push:*)` deny rule, and the task prompt allows the push. i2code still pushes after each task.

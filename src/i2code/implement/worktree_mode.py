@@ -183,6 +183,7 @@ class WorktreeMode:
         """Run Claude on the task until it passes validation (see TaskExecution)."""
         TaskExecution(
             self._opts, self._git_repo, self._work_project, self._loop_steps.claude_runner, self._supervisor,
+            sleep=self._sleep,
         ).run(next_task, self._build_command(task_description))
 
     def _push_and_ensure_pr(self):

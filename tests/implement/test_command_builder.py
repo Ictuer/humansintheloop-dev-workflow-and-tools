@@ -500,3 +500,28 @@ class TestCommandBuilderResumeCommands:
 
         assert CommandBuilder().build_resume_command(mock, "s-1", note="n").mock_command == ["/mock", "resume-s-1"]
         assert CommandBuilder().with_supervisor_message(mock, note="n").mock_command == ["/mock", "Task 1.1"]
+
+
+@pytest.mark.unit
+class TestCommandBuilderApiRetryCommand:
+    """build_api_retry_command resumes a session that a temporary API error cut off."""
+
+    def test_resumes_session_with_same_tools(self):
+        original = _build_task_cmd(opts=TaskCommandOpts(interactive=False, extra_cli_args=["--allowedTools", "Read"]))
+
+        retry = CommandBuilder().build_api_retry_command(original, "s-1")
+
+        assert retry.label == "retry"
+        assert retry.session_id is not None
+        assert retry.session_id.session_id == "s-1" and retry.session_id.is_new is False
+        assert retry.allowed_tools == "Read"
+        assert "interrupted by a temporary API error" in retry.prompt
+        assert "<SUCCESS>task implemented: COMMIT_SHA</SUCCESS>" in retry.prompt
+
+    def test_mock_command_gets_retry_argument(self):
+        original = ClaudeCodeCommand(cwd="/c", mock_command=["/mock", "Task 1.1"], label="task")
+
+        retry = CommandBuilder().build_api_retry_command(original, "s-1")
+
+        assert retry.mock_command == ["/mock", "retry-s-1"]
+        assert retry.label == "retry"

@@ -143,3 +143,15 @@ class TestSupervisedClaudeRunnerBrokenInbox:
         runner.execute(ClaudeCodeCommand(prompt="p", cwd="/c", label="task"))
 
         assert inner.calls[0][1].prompt == "p"
+
+
+@pytest.mark.unit
+class TestRetryReceivesNotes:
+
+    def test_retry_label_is_steerable(self):
+        inner = FakeClaudeRunner()
+        runner = SupervisedClaudeRunner(inner, RecordingJournal(), notes=QueuedNotes("n"))
+
+        runner.execute(ClaudeCodeCommand(prompt="p", cwd="/c", label="retry"))
+
+        assert inner.calls[0][1].prompt.endswith("- n")
