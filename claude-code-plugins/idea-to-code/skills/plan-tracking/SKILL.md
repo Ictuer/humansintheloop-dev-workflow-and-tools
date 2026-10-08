@@ -85,11 +85,12 @@ Before implementing a task from the plan, review its implementation details for 
 For each task in the plan:
 
 1. Get the next task using `plan-file-management` → `get-next-task`
-2. **Review for technical correctness** before implementing
+2. **Ground in the ratified architecture** before implementing: for any cross-cutting concern the task touches (authz, data, contracts, security, resilience, messaging, versioning, idempotency), read the governing ADR/spec/standards first and confirm the approach matches — do NOT infer a mechanism from memory. If the plan or an obvious implementation contradicts a ratified ADR, STOP and reclassify. See the `review-before-complete` skill, Gate 1. Also review the plan's own details for technical correctness.
 3. Implement the task (write test, implement code, verify)
 4. **Verify Observable and Evidence criteria** - tests must pass that verify the Evidence (see critical section above)
-5. **Mark task complete* using `plan-file-management` → `mark-task-complete`
-6. Continue to the next task
+5. **Independent adversarial review before completion** - run the `review-before-complete` skill (Gate 2): a fresh-context reviewer hunts the failure modes your own tests miss (idempotency, out-of-order/partial events, cross-tenant isolation, silent failure, equivalence drift). Tests passing is necessary but NOT sufficient. Fix any real Critical/Important finding and re-verify.
+6. **Mark task complete** using `plan-file-management` → `mark-task-complete`
+7. Continue to the next task
 
 ## Continue Without Stopping
 

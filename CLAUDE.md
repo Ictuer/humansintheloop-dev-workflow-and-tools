@@ -23,6 +23,7 @@ IMPORTANT: Always invoke the relevant skill before performing these actions:
 - **Before creating git commits**: Use the `idea-to-code:commit-guidelines` skill
 - **When practicing TDD**: Use the `idea-to-code:tdd` skill
 - **When working from a plan file**: Use the `idea-to-code:plan-tracking` skill
+- **Before marking any plan task complete**: Use the `idea-to-code:review-before-complete` skill (architecture grounding + independent adversarial review — tests passing is not sufficient)
 - **When renumbering or editing plan file structure**: Use the `idea-to-code:plan-file-management` skill
 - **When creating Dockerfiles**: Use the `idea-to-code:dockerfile-guidelines` skill
 - **When moving/renaming files**: Use the `idea-to-code:file-organization` skill
